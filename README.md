@@ -17,6 +17,14 @@ install.packages("tidyverse")
 ```
 ### Git Bash (if you only want to get the newest code)
 - [Install Git Bash](https://carpentries.github.io/workshop-template/)
+- Open the folder you want our repository to be copied to, e.g.,
+  ```
+  cd /c/Users/username/CoastalDiversity
+  ```
+- Type
+  ```
+  git clone https://github.com/OleksiiDubovyk/CoastalDiversity
+  ```
 ### Setup your GitHub account (if you plan to contribute to coding)
 - Create a GitHub account
 - Install (GitHub CLI)[https://github.com/cli/cli?tab=readme-ov-file#installation]
@@ -34,4 +42,7 @@ install.packages("tidyverse")
   git remote add origin https://{TOKEN}@github.com/OleksiiDubovyk/CoastalDiversity.git/
   ```
   [comment]: <Token is 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>
-- 
+- Whenever you want to edit the code, type
+  ```
+  git pull
+  ```
