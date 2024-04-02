@@ -18,20 +18,20 @@ install.packages("tidyverse")
 ### Git Bash (if you only want to get the newest code)
 - [Install Git Bash](https://carpentries.github.io/workshop-template/)
 - Open the folder you want our repository to be copied to, e.g.,
-  ```console
+  ```bash session
   cd /c/Users/username/CoastalDiversity
   ```
 - Let the Git know who you are
-  ```console
+  ```bash session
   git config --global user.name "Your Name"
   git config --global user.email "youremail@domain.com"
   ```
 - Type
-  ```console
+  ```bash session
   git clone https://github.com/OleksiiDubovyk/CoastalDiversity
   ```
 - Whenever you want to get the newest code, type
-  ```console
+  ```bash session
   git pull
   ```
 ### Setup your GitHub account (if you plan to contribute to coding)
@@ -42,16 +42,16 @@ install.packages("tidyverse")
     winget install --id GitHub.cli
     ```
     - Go back to Git Bash an run
-    ```console
+    ```bash session
     gh auth login
     ```
     - Follow the prompts: GitHub.com -> HTTPS -> Y -> Login with a web browser
 - Open Git Bash, run
-  ```console
+  ```bash session
   git remote add origin https://{TOKEN}@github.com/OleksiiDubovyk/CoastalDiversity.git/
   ```
 - Whenever you want to edit the code, type
-  ```console
+  ```bash session
   git pull
   git add filename.extension # specify the file you have just changed
   git commit -m "Your comments on what you've added"
