@@ -21,6 +21,11 @@ install.packages("tidyverse")
   ```
   cd /c/Users/username/CoastalDiversity
   ```
+- Let the Git know who you are
+  ```
+  git config --global user.name "Your Name"
+  git config --global user.email "youremail@domain.com"
+  ```
 - Type
   ```
   git clone https://github.com/OleksiiDubovyk/CoastalDiversity
@@ -45,9 +50,9 @@ install.packages("tidyverse")
   ```
   git remote add origin https://{TOKEN}@github.com/OleksiiDubovyk/CoastalDiversity.git/
   ```
-  [comment]: <Token is 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>
 - Whenever you want to edit the code, type
   ```
+  git add filename.extension
   git commit -m "Your comments on what you've added"
   git push
   ```
