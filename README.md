@@ -1,4 +1,4 @@
-# CoastalDiversity
+# Detection of diversity of coastal avian and mammalian fauna
 
 *Oleksii Dubovyk, Ella DiPetto, Chi Wei, Alex Wright, Iroshmal Peiris, Maizer Sparkman, Eric L. Walters*
 
@@ -12,47 +12,48 @@ The data collected during the dissertation research of [Ella DiPetto](https://ed
 - The latest [R version](https://cran.r-project.org/bin/windows/base/)
 - [Posit/RStudio](https://posit.co/download/rstudio-desktop/)
 - Install `tidyverse`:
-```
+```r
 install.packages("tidyverse")
 ```
 ### Git Bash (if you only want to get the newest code)
 - [Install Git Bash](https://carpentries.github.io/workshop-template/)
 - Open the folder you want our repository to be copied to, e.g.,
-  ```
+  ```console
   cd /c/Users/username/CoastalDiversity
   ```
 - Let the Git know who you are
-  ```
+  ```console
   git config --global user.name "Your Name"
   git config --global user.email "youremail@domain.com"
   ```
 - Type
-  ```
+  ```console
   git clone https://github.com/OleksiiDubovyk/CoastalDiversity
   ```
 - Whenever you want to get the newest code, type
-  ```
+  ```console
   git pull
   ```
 ### Setup your GitHub account (if you plan to contribute to coding)
 - Create a GitHub account
 - Install [GitHub CLI](https://github.com/cli/cli?tab=readme-ov-file#installation)
     - Open Windows PowerShell and run
-    ```
+    ```console
     winget install --id GitHub.cli
     ```
     - Go back to Git Bash an run
-    ```
+    ```console
     gh auth login
     ```
     - Follow the prompts: GitHub.com -> HTTPS -> Y -> Login with a web browser
 - Open Git Bash, run
-  ```
+  ```console
   git remote add origin https://{TOKEN}@github.com/OleksiiDubovyk/CoastalDiversity.git/
   ```
 - Whenever you want to edit the code, type
-  ```
-  git add filename.extension
+  ```console
+  git pull
+  git add filename.extension # specify the file you have just changed
   git commit -m "Your comments on what you've added"
   git push
   ```
