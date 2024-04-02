@@ -25,6 +25,10 @@ install.packages("tidyverse")
   ```
   git clone https://github.com/OleksiiDubovyk/CoastalDiversity
   ```
+- Whenever you want to get the newest code, type
+  ```
+  git pull
+  ```
 ### Setup your GitHub account (if you plan to contribute to coding)
 - Create a GitHub account
 - Install (GitHub CLI)[https://github.com/cli/cli?tab=readme-ov-file#installation]
@@ -44,5 +48,6 @@ install.packages("tidyverse")
   [comment]: <Token is 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>
 - Whenever you want to edit the code, type
   ```
-  git pull
+  git commit -m "Your comments on what you've added"
+  git push
   ```
