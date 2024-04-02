@@ -31,7 +31,7 @@ install.packages("tidyverse")
   ```
 ### Setup your GitHub account (if you plan to contribute to coding)
 - Create a GitHub account
-- Install (GitHub CLI)[https://github.com/cli/cli?tab=readme-ov-file#installation]
+- Install [GitHub CLI](https://github.com/cli/cli?tab=readme-ov-file#installation)
     - Open Windows PowerShell and run
     ```
     winget install --id GitHub.cli
