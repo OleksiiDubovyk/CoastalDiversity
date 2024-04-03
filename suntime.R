@@ -3,16 +3,9 @@
 # Apr 2, 2024
 
 suntime <- function(date, lat, lon, utc_offset){
+  # based on https://gml.noaa.gov/grad/solcalc/calcdetails.html
   
-  # A function to find a local time of sunrise and sunset for a given date and coordinates. 
-  # Based on the [USGS calculator](https://gml.noaa.gov/grad/solcalc/calcdetails.html).
-  # 
-  # **Arguments**
-  #   
-  # - `date` - chr, date of interest in "yyyy-mm-dd" format
-  # - `lat` - num, decimal latitude
-  # - `lon` - num, decimal longitude
-  # - `utc_offset` - num, time zone offset relative to the UTC: e.g., EDT is `-4`, EST is `-5`, PST is `-8`.
+  # date as 'yyyy-mm-dd'
   
   #functions for radians/degrees transformation
   rad2deg <- function(rad) {(rad * 180) / (pi)}
@@ -28,7 +21,7 @@ suntime <- function(date, lat, lon, utc_offset){
   
   tsm <- seq(0.1, 24, 0.1)/24 # time since midnight
   
-  jd <- (difftime(ymd("2024-04-02"), ymd("1899-12-30"), units = "d") %>% as.numeric()) + 2415018.5 + tsm - utc_offset/24 # julian date
+  jd <- (difftime(ymd(date), ymd("1899-12-30"), units = "d") %>% as.numeric()) + 2415018.5 + tsm - utc_offset/24 # julian date
   jc <- (jd - 2451545)/36525 # julian century
   
   gmlsd <- (280.46646 + jc * (36000.76983 + jc*0.0003032)) %% 360 # geom mean long sun (degrees)
@@ -65,6 +58,6 @@ suntime <- function(date, lat, lon, utc_offset){
   sunrise_time <- s2hms(mean(sunrise*60*60*24) %>% round())
   sunset_time <- s2hms(mean(sunset*60*60*24) %>% round())
   
-  return(c(sunrise_time, sunset_time))
+  return(c(paste(date, sunrise_time), paste(date, sunset_time)))
   
 }
