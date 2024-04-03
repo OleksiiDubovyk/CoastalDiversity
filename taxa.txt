@@ -1,0 +1,48 @@
+Raccoon	Mesomammal
+Yellow-crowned Night Heron	Wading Bird
+Great Egret	Wading Bird
+Spotted Sandpiper	Shorebird
+Great Blue Heron	Wading Bird
+Double-crested Cormorant	Seabird
+Muskrat	Small Mammal
+Muskrat	Mesomammal
+Mallard	Waterfowl
+Canada Goose	Waterfowl
+Common Grackle	Perching Bird
+Canada Goose	Wading Bird
+Mink	Small Mammal
+Green Heron	Wading Bird
+American Wigeon	Waterfowl
+Unknown	Perching Bird
+Hooded Merganser	Waterfowl
+NEED NEW LABEL	Waterfowl
+American Crow	Perching Bird
+Common Loon	Seabird
+Red-winged Blackbird	Perching Bird
+Unknown	Mesomammal
+Mink	Mesomammal
+Song Sparrow	Perching Bird
+River Otter	Mesomammal
+Unknown	Small Mammal
+Red Fox	Mesomammal
+Wood Duck	Waterfowl
+Eastern Gray Squirrel	Small Mammal
+Eastern Cottontail	Mesomammal
+Gray Fox	Mesomammal
+Mourning Dove	Perching Bird
+Domestic Cat	Mesomammal
+American Goldfinch	Perching Bird
+Clapper Rail	Marsh Bird
+Bald Eagle	Raptor
+American Crow	Shorebird
+Nutria	Mesomammal
+Northern Cardinal	Perching Bird
+Yellow-crowned Night Heron	Waterfowl
+Yellow-rumped Warbler	Perching Bird
+White-tailed Deer	Large Mammal
+Pied-billed Grebe	Waterfowl
+American Robin	Perching Bird
+Eastern Bluebird	Perching Bird
+Greater Yellowlegs	Shorebird
+Muskrat	Mammal_Unknown
+Pied-billed Grebe	Seabird
