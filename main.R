@@ -21,7 +21,7 @@ library(lubridate)
 dets <- read_csv("./detections.csv")
 depls <- read_csv("./deployments.csv")
 
-# Sunrise/sunset calculations
+# Sunrise/sunset calculations ----
 
 suntime <- function(date, lat, lon, utc_offset){
   # based on https://gml.noaa.gov/grad/solcalc/calcdetails.html
@@ -83,4 +83,44 @@ suntime <- function(date, lat, lon, utc_offset){
   
 }
 
-suntime(date = "2024-04-02", lat = 36.8794, lon = -76.2892, utc_offset = -4)
+# Time shift dates - when EST UTC-05:00 switched to EDT UTC-04:00 or vice versa
+
+timedate2offset <- function(dttm){
+  # function to figure out what the time offset is based on the date
+  # will NOT work correctly for any date before 2022-11-05 and after 2024-11-02
+  edt2est2021 <- ymd_hm("2021-11-06 02:00")
+  est2edt2022 <- ymd_hm("2022-03-12 02:00")
+  edt2est2022 <- ymd_hm("2022-11-05 02:00")
+  est2edt2023 <- ymd_hm("2023-03-11 02:00")
+  edt2est2023 <- ymd_hm("2023-11-04 02:00")
+  est2edt2024 <- ymd_hm("2024-03-09 02:00")
+  edt2est2024 <- ymd_hm("2024-11-02 02:00")
+  if (dttm < edt2est2021) {
+    return(NA)
+  }else if (dttm > edt2est2021 & dttm <= est2edt2022){
+    return(-5)
+  }else if (dttm > est2edt2022 & dttm <= edt2est2022){
+    return(-4)
+  }else if (dttm > edt2est2022 & dttm <= est2edt2023){
+    return(-5)
+  }else if (dttm > est2edt2023 & dttm <= edt2est2023){
+    return(-4)
+  }else if (dttm > edt2est2023 & dttm <= est2edt2024){
+    return(-5)
+  }else if (dttm > est2edt2024 & dttm <= edt2est2024){
+    return(-4)
+  }else{
+    return(NA)
+  }
+}
+
+dets_suntimes <- sapply(dets$DateTime, function(x){
+  suntime(date = date(x), 
+          lat = 36.8794, lon = -76.2892, 
+          utc_offset = timedate2offset(x))
+}) %>% t() %>% as_tibble() # takes time, about 10 minutes
+colnames(dets_suntimes) <- c("sunset", "sunrise")
+
+dets <- bind_cols(dets, dets_suntimes)
+
+write_csv(dets, "./dets_w_suntime.csv")
