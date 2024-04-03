@@ -1,48 +1,48 @@
-Raccoon,Mesomammal
-Yellow-crowned Night Heron,Wading Bird
-Great Egret,Wading Bird
-Spotted Sandpiper,Shorebird
-Great Blue Heron,Wading Bird
-Double-crested Cormorant,Seabird
-Muskrat,Small Mammal
-Muskrat,Mesomammal
-Mallard,Waterfowl
-Canada Goose,Waterfowl
-Common Grackle,Perching Bird
-Canada Goose,Wading Bird
-Mink,Small Mammal
-Green Heron,Wading Bird
-American Wigeon,Waterfowl
-Unknown,Perching Bird
-Hooded Merganser,Waterfowl
-NEED NEW LABEL,Waterfowl
-American Crow,Perching Bird
-Common Loon,Seabird
-Red-winged Blackbird,Perching Bird
-Unknown,Mesomammal
-Mink,Mesomammal
-Song Sparrow,Perching Bird
-River Otter,Mesomammal
-Unknown,Small Mammal
-Red Fox,Mesomammal
-Wood Duck,Waterfowl
-Eastern Gray Squirrel,Small Mammal
-Eastern Cottontail,Mesomammal
-Gray Fox,Mesomammal
-Mourning Dove,Perching Bird
-Domestic Cat,Mesomammal
-American Goldfinch,Perching Bird
-Clapper Rail,Marsh Bird
-Bald Eagle,Raptor
-American Crow,Shorebird
-Nutria,Mesomammal
-Northern Cardinal,Perching Bird
-Yellow-crowned Night Heron,Waterfowl
-Yellow-rumped Warbler,Perching Bird
-White-tailed Deer,Large Mammal
-Pied-billed Grebe,Waterfowl
-American Robin,Perching Bird
-Eastern Bluebird,Perching Bird
-Greater Yellowlegs,Shorebird
-Muskrat,Mammal_Unknown
-Pied-billed Grebe,Seabird
+Raccoon,Mesomammal,Procyon lotor
+Yellow-crowned Night Heron,Wading Bird,Nyctanassa violacea
+Great Egret,Wading Bird,Ardea alba
+Spotted Sandpiper,Shorebird,Actitis macularius
+Great Blue Heron,Wading Bird,Ardea herodias
+Double-crested Cormorant,Seabird,Phalacrocorax auritus
+Muskrat,Small Mammal,Ondatra zibethicus
+Muskrat,Mesomammal,Ondatra zibethicus
+Mallard,Waterfowl,Anas platyrhynchos
+Canada Goose,Waterfowl,Branta canadensis
+Common Grackle,Perching Bird,Quiscalus quiscula
+Canada Goose,Wading Bird,Branta canadensis
+Mink,Small Mammal,Neovison vison
+Green Heron,Wading Bird,Butorides virescens
+American Wigeon,Waterfowl,Mareca americana
+Unknown,Perching Bird,
+Hooded Merganser,Waterfowl,Lophodytes cucullatus
+NEED NEW LABEL,Waterfowl,
+American Crow,Perching Bird,Corvus brachyrhynchos
+Common Loon,Seabird,Gavia immer
+Red-winged Blackbird,Perching Bird,Agelaius phoeniceus
+Unknown,Mesomammal,
+Mink,Mesomammal,Neovison vison
+Song Sparrow,Perching Bird,Melospiza melodia
+River Otter,Mesomammal,Lontra canadensis
+Unknown,Small Mammal,
+Red Fox,Mesomammal,Vulpes vulpes
+Wood Duck,Waterfowl,Aix sponsa
+Eastern Gray Squirrel,Small Mammal,Sciurus carolinensis
+Eastern Cottontail,Mesomammal,Sylvilagus floridanus
+Gray Fox,Mesomammal,Urocyon cinereoargenteus
+Mourning Dove,Perching Bird,Zenaida macroura
+Domestic Cat,Mesomammal,Felis catus
+American Goldfinch,Perching Bird,Spinus tristis
+Clapper Rail,Marsh Bird,Rallus crepitans
+Bald Eagle,Raptor,Haliaeetus leucocephalus
+American Crow,Shorebird,Corvus brachyrhynchos
+Nutria,Mesomammal,Myocastor coypus
+Northern Cardinal,Perching Bird,Cardinalis cardinalis
+Yellow-crowned Night Heron,Waterfowl,Nyctanassa violacea
+Yellow-rumped Warbler,Perching Bird,Setophaga coronata
+White-tailed Deer,Large Mammal,Odocoileus virginianus
+Pied-billed Grebe,Waterfowl,Podilymbus podiceps
+American Robin,Perching Bird,Turdus migratorius
+Eastern Bluebird,Perching Bird,Sialia sialis
+Greater Yellowlegs,Shorebird,Tringa melanoleuca
+Muskrat,Mammal_Unknown,Ondatra zibethicus
+Pied-billed Grebe,Seabird,Podilymbus podiceps
