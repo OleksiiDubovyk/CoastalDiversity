@@ -5,7 +5,12 @@
 Data and analyses for the VAS 2024 annual meeting presentation (and subsequent pubs, hopefully) on observed avian and mammalian diversity of shorelines in coastal Virginia. Data privided by Ella DiPetto.
 
 ## Data source
+
+### Wildlife observations
 The data collected during the dissertation research of [Ella DiPetto](https://edipetto.weebly.com/).
+
+### Functional traits
+The dataset used was EltonTraits 1.0[^eltontraits].
 
 ## Contents
 
@@ -88,3 +93,7 @@ invisible(lapply(packages, library, character.only = TRUE))
   git commit -m "Your comments on what you've added"
   git push
   ```
+
+# References
+
+[^eltontraits]: Wilman, H., J. Belmaker, J. Simpson, C. de la Rosa, M. M. Rivadeneira, and W. Jetz. 2014. EltonTraits 1.0: species-level foraging attributes of the world’s birds and mammals. Ecology 95:2027–2027. https://doi.org/10.1890/13-1917.1
