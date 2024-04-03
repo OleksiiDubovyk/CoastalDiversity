@@ -1,5 +1,5 @@
 # (c) Oleksii Dubovyk, oadubovyk@gmail.com
-# Dept of Biological Sciences, Old Dominion Universty, Norfolk, VA 23529, USA
+# Dept of Biological Sciences, Old Dominion University, Norfolk, VA 23529, USA
 # Apr 2, 2024
 
 suntime <- function(date, lat, lon, utc_offset){
