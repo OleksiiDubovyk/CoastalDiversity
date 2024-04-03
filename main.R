@@ -119,7 +119,12 @@ dets_suntimes <- sapply(dets$DateTime, function(x){
           lat = 36.8794, lon = -76.2892, 
           utc_offset = timedate2offset(x))
 }) %>% t() %>% as_tibble() # takes time, about 10 minutes
-colnames(dets_suntimes) <- c("sunset", "sunrise")
+colnames(dets_suntimes) <- c("sunrise", "sunset")
+dets_suntimes <- dets_suntimes %>% mutate(
+  sunrise = ymd_hms(sunrise),
+  sunset = ymd_hms(sunset)
+) %>%
+  select(sunrise, sunset)
 
 dets <- bind_cols(dets, dets_suntimes)
 
