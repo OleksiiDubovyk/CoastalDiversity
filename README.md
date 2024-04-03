@@ -7,6 +7,32 @@ Data and analyses for the VAS 2024 annual meeting presentation (and subsequent p
 ## Data source
 The data collected during the dissertation research of [Ella DiPetto](https://edipetto.weebly.com/).
 
+## Contents
+
+### [main.R](main.R)
+
+The main script, all analyses are here.
+
+### [suntime.R](suntime.R)
+
+A function to find a local time of sunrise and sunset for a given date and coordinates. Based on the [USGS calculator](https://gml.noaa.gov/grad/solcalc/calcdetails.html).
+
+**Arguments**
+
+  - `date` - chr, date of interest in "yyyy-mm-dd" format
+  - `lat` - num, decimal latitude
+  - `lon` - num, decimal longitude
+  - `utc_offset` - num, time zone offset relative to the UTC: e.g., EDT is `-4`, EST is `-5`, PST is `-8`.
+
+**Usage**
+
+To calculate the sunrise and sunset time for Norfolk on Apr 2nd 2024, we call
+
+```r
+suntime(date = "2024-04-02", lat = 36.8794, lon = -76.2892, utc_offset = -4)
+## [1] "06:48:22" "19:28:38"
+```
+
 ## Prerequisites
 ### R stuff
 - The latest [R version](https://cran.r-project.org/bin/windows/base/)
