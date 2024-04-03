@@ -1,5 +1,5 @@
-Raccoon	Mesomammal
-Yellow-crowned Night Heron	Wading Bird
+Raccoon	Mesomammal	Procyon lotor
+Yellow-crowned Night Heron	Wading Bird	Nyctanassa violacea
 Great Egret	Wading Bird
 Spotted Sandpiper	Shorebird
 Great Blue Heron	Wading Bird
