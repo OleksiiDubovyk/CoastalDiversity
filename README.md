@@ -86,6 +86,10 @@ invisible(lapply(packages, library, character.only = TRUE))
   ```bash session
   git remote add origin https://{TOKEN}@github.com/OleksiiDubovyk/CoastalDiversity.git/
   ```
+  or, if it's not working, try
+  ```bash session
+  git remote set-url origin https://{TOKEN}@github.com/OleksiiDubovyk/CoastalDiversity.git/
+  ```
 - Whenever you want to edit the code, type
   ```bash session
   git pull
