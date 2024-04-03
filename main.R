@@ -130,3 +130,9 @@ dets <- bind_cols(dets, dets_suntimes)
 
 write_csv(dets, "./dets_w_suntime.csv")
 
+## Getting traits ----
+
+dets %>%
+  select(Species, Guild) %>%
+  distinct() %>% 
+  write_csv("taxa.csv", col_names = F)
