@@ -37,9 +37,14 @@ suntime(date = "2024-04-02", lat = 36.8794, lon = -76.2892, utc_offset = -4)
 ### R stuff
 - The latest [R version](https://cran.r-project.org/bin/windows/base/)
 - [Posit/RStudio](https://posit.co/download/rstudio-desktop/)
-- Install `tidyverse`:
+- Install `tidyverse`, `lubridate`:
 ```r
-install.packages("tidyverse")
+packages <- c("tidyverse", "lubridate")
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+invisible(lapply(packages, library, character.only = TRUE))
 ```
 ### Git Bash (if you only want to get the newest code)
 - [Install Git Bash](https://carpentries.github.io/workshop-template/)
