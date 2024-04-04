@@ -132,10 +132,20 @@ write_csv(dets, "./dets_w_suntime.csv")
 
 ## Getting traits ----
 
-dets %>%
-  select(Species, Guild) %>%
-  distinct() %>% 
-  write_csv("taxa.csv", col_names = F)
+# dets %>%
+#   select(Species, Guild) %>%
+#   distinct() %>% 
+#   write_csv("taxa.csv", col_names = F)
 
-# Alex was here
+# ^ Irosh added scientific names to taxa.csv, do not run because line 135 will overwrite the file
 
+taxa <- read_csv("taxa.csv", col_names = F) %>% 
+  mutate(eng = X1, sci = X3) %>% 
+  select(eng, sci) %>% 
+  distinct() %>%
+  filter(!is.na(sci))
+
+traits_birds <- read_tsv("BirdFuncDat.txt")
+traits_mammals <- read_tsv("MamFuncDat.txt")
+
+taxa %>% inner_join(traits_birds, by = c("sci" = "Scientific"))
