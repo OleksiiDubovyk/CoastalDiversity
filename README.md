@@ -77,16 +77,12 @@ invisible(lapply(packages, library, character.only = TRUE))
     ```console
     winget install --id GitHub.cli
     ```
-    - Go back to Git Bash an run
+    - Restart Git Bash, navigate to the working directory, an run
     ```bash session
     gh auth login
     ```
     - Follow the prompts: GitHub.com -> HTTPS -> Y -> Login with a web browser
 - Open Git Bash, run
-  ```bash session
-  git remote add origin https://{TOKEN}@github.com/OleksiiDubovyk/CoastalDiversity.git/
-  ```
-  or, if it's not working, try
   ```bash session
   git remote set-url origin https://{TOKEN}@github.com/OleksiiDubovyk/CoastalDiversity.git/
   ```
