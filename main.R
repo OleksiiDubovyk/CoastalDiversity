@@ -137,7 +137,7 @@ write_csv(dets, "./dets_w_suntime.csv")
 #   distinct() %>% 
 #   write_csv("taxa.csv", col_names = F)
 
-# ^ Irosh added scientific names to taxa.csv, do not run because line 135 will overwrite the file
+# ^ Irosh added scientific names to taxa.csv, do not run because line 135 will overwrite the file - OD
 
 taxa <- read_csv("taxa.csv", col_names = F) %>% 
   mutate(eng = X1, sci = X3) %>% 
@@ -148,4 +148,26 @@ taxa <- read_csv("taxa.csv", col_names = F) %>%
 traits_birds <- read_tsv("BirdFuncDat.txt")
 traits_mammals <- read_tsv("MamFuncDat.txt")
 
-taxa %>% inner_join(traits_birds, by = c("sci" = "Scientific"))
+traits_birds <-  taxa %>% inner_join(traits_birds, by = c("sci" = "Scientific")) # yes, it's not good to overwrite the tibbles, but we're not gonna need them - OD
+traits_mammals <-  taxa %>% inner_join(traits_mammals, by = c("sci" = "Scientific"))
+
+traits_all <- bind_rows(
+  traits_birds %>%
+    select(intersect(colnames(traits_birds), colnames(traits_mammals))) %>%
+    mutate(class = "bird"),
+  traits_mammals %>%
+    select(intersect(colnames(traits_birds), colnames(traits_mammals))) %>%
+    mutate(class = "mammal")
+) %>% # join birds and mammals with only traits for which data available for both
+  mutate(d_inv = `Diet-Inv`, 
+         d_vend = `Diet-Vend`,
+         d_vect = `Diet-Vect`,
+         d_vfish = `Diet-Vfish`,
+         d_vunk = `Diet-Vunk`,
+         d_scav = `Diet-Scav`,
+         d_fru = `Diet-Fruit`,
+         d_nect = `Diet-Nect`,
+         d_seed = `Diet-Seed`,
+         d_plant = `Diet-PlantO`,
+         bodymass = `BodyMass-Value`) %>% # rename variables with easier abbrs
+  select(eng, sci, d_inv, d_vend, d_vect, d_vfish, d_vunk, d_scav, d_fru, d_nect, d_seed, d_plant, bodymass) # keep the important vars
