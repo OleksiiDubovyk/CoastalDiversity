@@ -25,6 +25,31 @@ depls <- read_csv("./deployments.csv")
 
 source("suntime.R")
 
+# transform local time into a degree: say midnight is 0=2pi, sunrise should be pi/2, noon should be pi, and sunset should be 3/2 pi
+
+time2deg <- function(time, sunrise, sunset){
+  # all args in dttm format
+  # time <- ymd_hms(time)
+  # sunrise <- ymd_hms(sunrise)
+  # sunset <- ymd_hms(sunset)
+  daylength <- difftime(sunset, sunrise, units = "s") %>% as.numeric()
+  noon <- round(sunrise + daylength/2)
+  midnight <- noon - 60*60*12
+  d_sunrise <- difftime(sunrise, midnight, units = "s") %>% as.numeric()
+  d_sunset <- difftime(sunset, midnight, units = "s") %>% as.numeric()
+  d_noon <- 60*60*12
+  d_time <- difftime(time, midnight, units = "s") %>% as.numeric()
+  if (time >= midnight & time < sunrise){
+    return(d_time/d_sunrise * 0.5*pi)
+  }else if (time >= sunrise & time < noon){
+    return((d_time - d_sunrise)/(d_noon - d_sunrise) * 0.5*pi + 0.5*pi)
+  }else if (time >= noon & time < sunset){
+    return((d_time - d_noon)/(d_sunset - d_noon) * 0.5*pi + pi)
+  }else{
+    return((d_time - d_sunset)/(24*60*60 - d_sunset) * 0.5*pi + 1.5*pi)
+  }
+}
+
 # Time shift dates - when EST UTC-05:00 switched to EDT UTC-04:00 or vice versa
 
 timedate2offset <- function(dttm){
@@ -56,21 +81,36 @@ timedate2offset <- function(dttm){
   }
 }
 
-dets_suntimes <- sapply(dets$DateTime, function(x){
-  suntime(date = date(x), 
-          lat = 36.8794, lon = -76.2892, 
-          utc_offset = timedate2offset(x))
-}) %>% t() %>% as_tibble() # takes time, about 10 minutes
-colnames(dets_suntimes) <- c("sunrise", "sunset")
-dets_suntimes <- dets_suntimes %>% mutate(
-  sunrise = ymd_hms(sunrise),
-  sunset = ymd_hms(sunset)
-) %>%
-  select(sunrise, sunset)
+# dets_suntimes <- sapply(dets$DateTime, function(x){
+#   suntime(date = date(x), 
+#           lat = 36.8794, lon = -76.2892, 
+#           utc_offset = timedate2offset(x))
+# }) %>% t() %>% as_tibble() # takes time, about 10 minutes
+# colnames(dets_suntimes) <- c("sunrise", "sunset")
+# dets_suntimes <- dets_suntimes %>% mutate(
+#   sunrise = ymd_hms(sunrise),
+#   sunset = ymd_hms(sunset)
+# ) %>%
+#   select(sunrise, sunset)
+# 
+# dets <- bind_cols(dets, dets_suntimes)
 
-dets <- bind_cols(dets, dets_suntimes)
+# det_sintime <- sapply(1:nrow(dets), function(i){
+#   sin(time2deg(time = dets$DateTime[i], sunrise = dets$sunrise[i], sunset = dets$sunset[i]))
+# })
+# 
+# det_costime <- sapply(1:nrow(dets), function(i){
+#   cos(time2deg(time = dets$DateTime[i], sunrise = dets$sunrise[i], sunset = dets$sunset[i]))
+# })
+# 
+# dets <- dets %>%
+#   mutate(sintime = det_sintime,
+#          costime = det_costime)
 
-write_csv(dets, "./dets_w_suntime.csv")
+# 
+# write_csv(dets, "./dets_w_suntime.csv")
+
+dets <- read_csv("./dets_w_suntime.csv")
 
 ## Getting traits ----
 
