@@ -16,12 +16,16 @@ library(lubridate)
 
 # MAIN ----
 
-## Data import ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Data import ---------------------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 dets <- read_csv("./detections.csv")
 depls <- read_csv("./deployments.csv")
 
-# Sunrise/sunset calculations ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Sunrise/sunset calculations ------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 source("suntime.R")
 
@@ -29,9 +33,6 @@ source("suntime.R")
 
 time2deg <- function(time, sunrise, sunset){
   # all args in dttm format
-  # time <- ymd_hms(time)
-  # sunrise <- ymd_hms(sunrise)
-  # sunset <- ymd_hms(sunset)
   daylength <- difftime(sunset, sunrise, units = "s") %>% as.numeric()
   noon <- round(sunrise + daylength/2)
   midnight <- noon - 60*60*12
@@ -81,9 +82,11 @@ timedate2offset <- function(dttm){
   }
 }
 
+# Code used to generate the final version of dets_w_suntime.csv ~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
 # dets_suntimes <- sapply(dets$DateTime, function(x){
-#   suntime(date = date(x), 
-#           lat = 36.8794, lon = -76.2892, 
+#   suntime(date = date(x),
+#           lat = 36.8794, lon = -76.2892,
 #           utc_offset = timedate2offset(x))
 # }) %>% t() %>% as_tibble() # takes time, about 10 minutes
 # colnames(dets_suntimes) <- c("sunrise", "sunset")
@@ -94,25 +97,47 @@ timedate2offset <- function(dttm){
 #   select(sunrise, sunset)
 # 
 # dets <- bind_cols(dets, dets_suntimes)
-
+# remove(dets_suntimes)
+# 
+# det_degtime <- sapply(1:nrow(dets), function(i){
+#   time2deg(time = dets$DateTime[i], 
+#            sunrise = dets$sunrise[i], 
+#            sunset = dets$sunset[i]) %% (2*pi) # %% to ensure that deg is between 0 and 2pi
+# })
+# # 
+# dets <- dets %>%
+#   mutate(degtime = det_degtime)
+# 
 # det_sintime <- sapply(1:nrow(dets), function(i){
-#   sin(time2deg(time = dets$DateTime[i], sunrise = dets$sunrise[i], sunset = dets$sunset[i]))
+#   sin(dets$degtime[i])
 # })
 # 
 # det_costime <- sapply(1:nrow(dets), function(i){
-#   cos(time2deg(time = dets$DateTime[i], sunrise = dets$sunrise[i], sunset = dets$sunset[i]))
+#   cos(dets$degtime[i])
 # })
 # 
 # dets <- dets %>%
 #   mutate(sintime = det_sintime,
 #          costime = det_costime)
-
+# 
+# remove(det_costime, det_sintime, det_degtime)
 # 
 # write_csv(dets, "./dets_w_suntime.csv")
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 dets <- read_csv("./dets_w_suntime.csv")
 
-## Getting traits ----
+# timing convention is the following:
+# 0 = astronomic midnight
+# pi/2 = sunrise
+# pi = astronomic noon
+# 3*pi/2 = sunset
+# 2*pi = astronomic midnight
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Getting traits ------------------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # dets %>%
 #   select(Species, Guild) %>%
@@ -153,3 +178,11 @@ traits_all <- bind_rows(
          d_plant = `Diet-PlantO`,
          bodymass = `BodyMass-Value`) %>% # rename variables with easier abbrs
   select(eng, sci, d_inv, d_vend, d_vect, d_vfish, d_vunk, d_scav, d_fru, d_nect, d_seed, d_plant, bodymass) # keep the important vars
+
+#
+
+dets %>%
+  ggplot(aes(x = degtime)) +
+  geom_histogram(color = "black", bins = 24, boundary = 0) +
+  coord_polar("x", start = pi, direction = 1) +
+  scale_x_continuous(limits = c(0, 2*pi), breaks = seq(0, 1.5*pi, 0.5*pi), labels = c("Midnight", "Sunrise", "Noon", "Sunset"))
