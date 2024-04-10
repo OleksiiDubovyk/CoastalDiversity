@@ -58,9 +58,9 @@ suntime(date = "2024-04-02", lat = 36.8794, lon = -76.2892, utc_offset = -4)
 ### R stuff
 - The latest [R version](https://cran.r-project.org/bin/windows/base/)
 - [Posit/RStudio](https://posit.co/download/rstudio-desktop/)
-- Install `tidyverse`, `lubridate`, `data.table`:
+- Install `tidyverse`, `lubridate`, `data.table`, `caret`:
 ```r
-packages <- c("tidyverse", "lubridate", "data.table")
+packages <- c("tidyverse", "lubridate", "data.table", "caret")
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(packages[!installed_packages])

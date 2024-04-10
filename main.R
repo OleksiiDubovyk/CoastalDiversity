@@ -18,6 +18,7 @@ rm(list = ls())
 library(tidyverse)
 library(lubridate)
 library(data.table)
+library(caret)
 
 # MAIN ----
 
@@ -256,17 +257,31 @@ tides <- read_csv("tides.csv")
 #   select(DateTime, level)
 # write_csv(tides, "tides.csv")
 
-# An example of one location
-
-obs_tides <- dets %>%
-  select(DateTime, Tide) %>%
-  setDT()
-
-setDT(tides)
-
-obs_tides[, level := tides[.SD, on = "DateTime", roll = "nearest", level]]
-
-obs_tides <- as_tibble(obs_tides)
+# obs_tides <- dets %>%
+#   select(DateTime, Tide) %>%
+#   setDT()
+# 
+# setDT(tides)
+# 
+# obs_tides[, level := tides[.SD, on = "DateTime", roll = "nearest", level]]
+# 
+# obs_tides <- as_tibble(obs_tides)
+# 
+# # K-nearest neighbors classifier
+# validationIndex <- createDataPartition(obs_tides$Tide, p = 0.70, list = FALSE)
+# train <- obs_tides[validationIndex,]
+# test <- obs_tides[-validationIndex,]
+# trainControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+# metric <- "Accuracy"
+# fit.knn <- train(Tide ~ level, data = train, method = "knn",
+#                  metric = metric, trControl = trainControl)
+# knn.k1 <- fit.knn$bestTune
+# plot(fit.knn) # K = 5 seems the best
+# prediction <- predict(fit.knn, newdata = test)
+# 
+# tides$Tide <- predict(fit.knn, newdata = tides)
+# tides <- tides %>% as_tibble()
+# write_csv(tides, "tides.csv")
 
 site <- "BRAD"
 
