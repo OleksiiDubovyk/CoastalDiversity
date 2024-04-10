@@ -179,10 +179,41 @@ traits_all <- bind_rows(
          bodymass = `BodyMass-Value`) %>% # rename variables with easier abbrs
   select(eng, sci, d_inv, d_vend, d_vect, d_vfish, d_vunk, d_scav, d_fru, d_nect, d_seed, d_plant, bodymass) # keep the important vars
 
-#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Timing of observations -----------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# All observations as a function of time
 
 dets %>%
   ggplot(aes(x = degtime)) +
   geom_histogram(color = "black", bins = 24, boundary = 0) +
   coord_polar("x", start = pi, direction = 1) +
-  scale_x_continuous(limits = c(0, 2*pi), breaks = seq(0, 1.5*pi, 0.5*pi), labels = c("Midnight", "Sunrise", "Noon", "Sunset"))
+  scale_x_continuous(limits = c(0, 2*pi), breaks = seq(0, 1.5*pi, 0.5*pi), 
+                     labels = c("Midnight", "Sunrise", "Noon", "Sunset")) +
+  labs(title = "All observations vs. Time") +
+  xlab("") +
+  ylab("Count")
+
+# Group observations by time bins, species, and locations
+
+dets %>%
+  mutate(timebin = degtime %/% (2*pi/24)) %>%
+  group_by(Site, Species, Tide, timebin) %>%
+  summarise(n = sum(Count), .groups = "drop")
+
+# Get species richness per time bin
+
+dets %>%
+  mutate(timebin = degtime %/% (2*pi/24)) %>%
+  group_by(Site, Species, Tide, timebin) %>%
+  summarise(n = sum(Count), .groups = "drop") %>%
+  group_by(Site, Tide, timebin) %>%
+  summarise(sprich = n(), .groups = "drop") %>%
+  # ggplot part below
+  ggplot(aes(x = timebin, y = sprich)) +
+  geom_jitter() +
+  geom_smooth() + 
+  geom_vline(xintercept = c(0, 6, 12, 18, 24)) +
+  xlab("Time bin") +
+  ylab("Species richness")
