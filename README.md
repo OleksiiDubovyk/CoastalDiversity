@@ -9,8 +9,24 @@ Data and analyses for the VAS 2024 annual meeting presentation (and subsequent p
 ### Wildlife observations
 The data collected during the dissertation research of [Ella DiPetto](https://edipetto.weebly.com/).
 
+#### [detections.csv]
+
+The main dataset containing the data on wildlife observations.
+
+#### [deployments.csv]
+
+Supplementary dataset on duration of each deployment of trail cameras.
+
 ### Functional traits
+
+#### [BirdFuncDat.txt] and [MamFuncDat.txt]
 The dataset used was EltonTraits 1.0[^eltontraits].
+
+### Tides
+
+#### [tides.csv]
+
+The data on tides from the [NOAA](https://tidesandcurrents.noaa.gov/waterlevels.html?id=8638610&units=standard&bdate=20220401&edate=20230201&timezone=GMT&datum=MLLW&interval=h&action=data).
 
 ## Contents
 
