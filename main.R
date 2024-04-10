@@ -10,9 +10,14 @@ h$add(function(expr, value, ok, visible) {
 # clean the environment
 rm(list = ls())
 
+# handy function, opposite of %in%
+
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
 # LIBRARIES ---- 
 library(tidyverse)
 library(lubridate)
+library(data.table)
 
 # MAIN ----
 
@@ -20,7 +25,8 @@ library(lubridate)
 ## Data import ---------------------------------------------------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-dets <- read_csv("./detections.csv")
+dets <- read_csv("./detections.csv") %>%
+  filter(Species %!in% c("NEED NEW LABEL", "Unknown"))
 depls <- read_csv("./deployments.csv")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -144,7 +150,7 @@ dets <- read_csv("./dets_w_suntime.csv")
 #   distinct() %>% 
 #   write_csv("taxa.csv", col_names = F)
 
-# ^ Irosh added scientific names to taxa.csv, do not run because line 135 will overwrite the file - OD
+# ^ Irosh added scientific names to taxa.csv, do not run because line 142 will overwrite the file - OD
 
 taxa <- read_csv("taxa.csv", col_names = F) %>% 
   mutate(eng = X1, sci = X3) %>% 
@@ -195,6 +201,22 @@ dets %>%
   xlab("") +
   ylab("Count")
 
+# Observations of species as a function of time
+
+for (s in dets$Species %>% unique()){
+  g <- dets %>%
+    filter(Species == s) %>%
+    ggplot(aes(x = degtime)) +
+    geom_histogram(color = "black", bins = 24, boundary = 0) +
+    coord_polar("x", start = pi, direction = 1) +
+    scale_x_continuous(limits = c(0, 2*pi), breaks = seq(0, 1.5*pi, 0.5*pi), 
+                       labels = c("Midnight", "Sunrise", "Noon", "Sunset")) +
+    labs(title = paste(s, "vs. Time")) +
+    xlab("") +
+    ylab("Count")
+  print(g)
+}
+
 # Group observations by time bins, species, and locations
 
 dets %>%
@@ -217,3 +239,41 @@ dets %>%
   geom_vline(xintercept = c(0, 6, 12, 18, 24)) +
   xlab("Time bin") +
   ylab("Species richness")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Tides ---------------------------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+tides <- read_csv("tides.csv")
+
+# next step takes time, ~ 5 min
+# tides <- tides %>%
+#   mutate(DateTime = paste(Date, `Time (GMT)`) %>% ymd_hms(),
+#          level = `Verified (ft)`) %>%
+#   select(DateTime, level) %>%
+#   mutate(off = sapply(.$DateTime, function(x) timedate2offset(x))) %>% # getting offset from UTC
+#   mutate(DateTime = DateTime + off*60*60) %>%# adjust to local time
+#   select(DateTime, level)
+# write_csv(tides, "tides.csv")
+
+# An example of one location
+
+obs_tides <- dets %>%
+  select(DateTime, Tide) %>%
+  setDT()
+
+setDT(tides)
+
+obs_tides[, level := tides[.SD, on = "DateTime", roll = "nearest", level]]
+
+obs_tides <- as_tibble(obs_tides)
+
+site <- "BRAD"
+
+
+dets %>%
+  filter(Site == site)
+
+depls %>%
+  filter(Site == site)
+
