@@ -20,6 +20,7 @@ library(tidyverse)
 library(lubridate)
 library(caret)
 library(progress)
+library(ggplot2)
 
 # MAIN ----
 
@@ -440,6 +441,36 @@ dets_empty <- dets_empty %>%
          x = "Tide Level",
          y = "Count") +
     ggtitle("Number of Mammal Detections by Tide Level")
+  
+#Using categorical tide levels
+  
+  SpeciesCount <- dets %>%
+    filter(Species != "Unknown") %>%  #NOTE ignoring unknowns
+    group_by(Type, Species) %>%
+    summarize(Total_Observations = n()) %>%
+    pivot_wider(names_from = Type, values_from = Total_Observations, names_prefix = "Count_") %>%
+    mutate(Totals = rowSums(select(., starts_with("Count")), na.rm = TRUE))
+  
+  
+  # Filter only species with n >= 5
+  SpeciesCount_filtered <- SpeciesCount %>%
+    filter(Totals >= 5)
+  
+  # Reorder levels of Tide variable
+  dets$Tide <- factor(dets$Tide, levels = c("High", "Mid", "Low"))
+  
+  #Plot
+  ggplot(dets, aes(x = Guild, fill = Tide)) +
+    geom_bar(position = "fill", width = 0.95) +  # Adjust width of bars and space between bars
+    labs(title = "Detections Across Tide Levels",
+         x = "Guild",
+         y = "Proportion") +
+    scale_fill_manual(values = c("High" = "darkblue", "Mid" = "blue", "Low" = "lightblue")) +  # Gradient color scale
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 7),  # Angle x-axis labels and adjust text size
+          plot.margin = margin(l = 2, r = 2, unit = "cm")) +  # Adjust plot margin
+    coord_flip() +  # Flip coordinates to make the plot wider
+    theme(plot.title = element_text(hjust = 0.5))  # Center plot title
   
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Rarefaction per location/tide/time bin ------------------------------------------------
