@@ -191,8 +191,34 @@ traits_all <- bind_rows(
 # Timing of observations -----------------------------------------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# All observations as a function of time
 
+#Bird observations as a function of time
+birds <- dets %>%
+  filter(Guild %in% c("Perching Bird", "Wading Bird", "Marsh Bird", "Raptor", "Seabird", "Shorebird", "Waterfowl"))
+
+ggplot(birds, aes(x = degtime)) +
+  geom_histogram(color = "black", bins = 24, boundary = 0) +
+  coord_polar("x", start = pi, direction = 1) +
+  scale_x_continuous(limits = c(0, 2*pi), breaks = seq(0, 1.5*pi, 0.5*pi), 
+                     labels = c("Midnight", "Sunrise", "Noon", "Sunset")) +
+  labs(title = "Bird Observations vs. Time") +
+  xlab("") +
+  ylab("Count")
+
+#Mammal observations as a function of time
+mammals <- dets %>%
+  filter(Guild %in% c("Mesomammal", "Small Mammal", "Large Mammal"))
+
+ggplot(mammals, aes(x = degtime)) +
+  geom_histogram(color = "black", bins = 24, boundary = 0) +
+  coord_polar("x", start = pi, direction = 1) +
+  scale_x_continuous(limits = c(0, 2*pi), breaks = seq(0, 1.5*pi, 0.5*pi), 
+                     labels = c("Midnight", "Sunrise", "Noon", "Sunset")) +
+  labs(title = "Mammal Observations vs. Time") +
+  xlab("") +
+  ylab("Count")
+
+# All observations as a function of time
 dets %>%
   ggplot(aes(x = degtime)) +
   geom_histogram(color = "black", bins = 24, boundary = 0) +
