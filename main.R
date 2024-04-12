@@ -400,78 +400,98 @@ dets_empty <- dets_empty %>%
   mutate(degtime = det_empty_degtime)
 
 ### ED trying something here, but doesn't account for frequency of all tide levels
- 
-  dets_tides <- dets
-  dets_tides$DateTime <- as.POSIXct(dets$DateTime)
-  
-  # Function to find the closest tide level for each datetime
-  find_closest_tide <- function(datetime) {
-    closest_index <- which.min(abs(as.numeric(datetime - tides$DateTime)))
-    return(tides$level[closest_index])
-  }
-  
-  # Add a new column level2 to det_tides with the closest tide level for each DateTime
-  dets_tides$level2 <- sapply(dets_tides$DateTime, find_closest_tide)
-  
- # All Dets vs Tides
-  ggplot(dets_tides, aes(x = level2)) +
-    geom_histogram(binwidth = .25, color = "black", fill = "skyblue") +
-    labs(title = "Number of Detections by Tide Level",
-         x = "Tide Level",
-         y = "Count")
-  
+
+dets_tides <- dets
+dets_tides$DateTime <- as.POSIXct(dets$DateTime)
+
+# Function to find the closest tide level for each datetime
+find_closest_tide <- function(datetime) {
+  closest_index <- which.min(abs(as.numeric(datetime - tides$DateTime)))
+  return(tides$level[closest_index])
+}
+
+# Add a new column level2 to det_tides with the closest tide level for each DateTime
+dets_tides$level2 <- sapply(dets_tides$DateTime, find_closest_tide)
+
+# All Dets vs Tides
+ggplot(dets_tides, aes(x = level2)) +
+  geom_histogram(binwidth = .25, color = "black", fill = "skyblue") +
+  labs(title = "Number of Detections by Tide Level",
+       x = "Tide Level",
+       y = "Count")
+
 #Bird dets vs Tides
-  birds <- dets_tides %>%
-    filter(Guild %in% c("Perching Bird", "Wading Bird", "Marsh Bird", "Raptor", "Seabird", "Shorebird", "Waterfowl"))
-  
-  ggplot() +
-    geom_histogram(data = birds, aes(x = level2), binwidth = 0.25, color = "black", fill = "skyblue") +
-    labs(title = "Number of Bird Detections by Tide Level",
-         x = "Tide Level",
-         y = "Count") +
-    ggtitle("Number of Bird Detections by Tide Level")
-  
+birds <- dets_tides %>%
+  filter(Guild %in% c("Perching Bird", "Wading Bird", "Marsh Bird", "Raptor", "Seabird", "Shorebird", "Waterfowl"))
+
+ggplot() +
+  geom_histogram(data = birds, aes(x = level2), binwidth = 0.25, color = "black", fill = "skyblue") +
+  labs(title = "Number of Bird Detections by Tide Level",
+       x = "Tide Level",
+       y = "Count") +
+  ggtitle("Number of Bird Detections by Tide Level")
+
 #Mammal dets vs Tides
-  mammals <- dets_tides %>%
-    filter(Guild %in% c("Mesomammal", "Small Mammal", "Large Mammal"))
-  
-  ggplot() +
-    geom_histogram(data = mammals, aes(x = level2), binwidth = 0.25, color = "black", fill = "skyblue") +
-    labs(title = "Number of Mammal Detections by Tide Level",
-         x = "Tide Level",
-         y = "Count") +
-    ggtitle("Number of Mammal Detections by Tide Level")
-  
+mammals <- dets_tides %>%
+  filter(Guild %in% c("Mesomammal", "Small Mammal", "Large Mammal"))
+
+ggplot() +
+  geom_histogram(data = mammals, aes(x = level2), binwidth = 0.25, color = "black", fill = "skyblue") +
+  labs(title = "Number of Mammal Detections by Tide Level",
+       x = "Tide Level",
+       y = "Count") +
+  ggtitle("Number of Mammal Detections by Tide Level")
+
 #Using categorical tide levels
-  
-  SpeciesCount <- dets %>%
-    filter(Species != "Unknown") %>%  #NOTE ignoring unknowns
-    group_by(Type, Species) %>%
-    summarize(Total_Observations = n()) %>%
-    pivot_wider(names_from = Type, values_from = Total_Observations, names_prefix = "Count_") %>%
-    mutate(Totals = rowSums(select(., starts_with("Count")), na.rm = TRUE))
-  
-  
-  # Filter only species with n >= 5
-  SpeciesCount_filtered <- SpeciesCount %>%
-    filter(Totals >= 5)
-  
-  # Reorder levels of Tide variable
-  dets$Tide <- factor(dets$Tide, levels = c("High", "Mid", "Low"))
-  
-  #Plot
-  ggplot(dets, aes(x = Guild, fill = Tide)) +
-    geom_bar(position = "fill", width = 0.95) +  # Adjust width of bars and space between bars
-    labs(title = "Detections Across Tide Levels",
-         x = "Guild",
-         y = "Proportion") +
-    scale_fill_manual(values = c("High" = "darkblue", "Mid" = "blue", "Low" = "lightblue")) +  # Gradient color scale
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 7),  # Angle x-axis labels and adjust text size
-          plot.margin = margin(l = 2, r = 2, unit = "cm")) +  # Adjust plot margin
-    coord_flip() +  # Flip coordinates to make the plot wider
-    theme(plot.title = element_text(hjust = 0.5))  # Center plot title
-  
+
+SpeciesCount <- dets %>%
+  filter(Species != "Unknown") %>%  #NOTE ignoring unknowns
+  group_by(Type, Species) %>%
+  summarize(Total_Observations = n()) %>%
+  pivot_wider(names_from = Type, values_from = Total_Observations, names_prefix = "Count_") %>%
+  mutate(Totals = rowSums(select(., starts_with("Count")), na.rm = TRUE))
+
+
+# Filter only species with n >= 5
+SpeciesCount_filtered <- SpeciesCount %>%
+  filter(Totals >= 5)
+
+# Reorder levels of Tide variable
+dets$Tide <- factor(dets$Tide, levels = c("High", "Mid", "Low"))
+
+#Plot
+ggplot(dets, aes(x = Guild, fill = Tide)) +
+  geom_bar(position = "fill", width = 0.95) +  # Adjust width of bars and space between bars
+  labs(title = "Detections Across Tide Levels",
+       x = "Guild",
+       y = "Proportion") +
+  scale_fill_manual(values = c("High" = "darkblue", "Mid" = "blue", "Low" = "lightblue")) +  # Gradient color scale
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 7),  # Angle x-axis labels and adjust text size
+        plot.margin = margin(l = 2, r = 2, unit = "cm")) +  # Adjust plot margin
+  coord_flip() +  # Flip coordinates to make the plot wider
+  theme(plot.title = element_text(hjust = 0.5))  # Center plot title
+
+# OD: Ella's code doesn't account for the baseline tide level
+
+# Chi-squared test for observations vs null tide levels
+
+null_tides <- depls_dated %>%
+  summarise(High = sum(High), Mid = sum(Mid), Low = sum(Low)) %>% unlist()
+
+birds_tides <- dets %>%
+  filter(Guild %in% c("Perching Bird", "Wading Bird", "Marsh Bird", "Raptor", "Seabird", "Shorebird", "Waterfowl")) %>%
+  .$Tide %>% summary()
+
+mammals_tides <- dets %>%
+  filter(Guild %in% c("Mesomammal", "Small Mammal", "Large Mammal")) %>%
+  .$Tide %>% summary()
+
+tibble(null_tides, birds_tides) %>% chisq.test()
+tibble(null_tides, mammals_tides) %>% chisq.test()
+
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Rarefaction per location/tide/time bin ------------------------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
