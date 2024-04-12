@@ -15,10 +15,11 @@ rm(list = ls())
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
 # LIBRARIES ---- 
+library(data.table)
 library(tidyverse)
 library(lubridate)
-library(data.table)
 library(caret)
+library(progress)
 
 # MAIN ----
 
@@ -283,12 +284,97 @@ tides <- read_csv("tides.csv")
 # tides <- tides %>% as_tibble()
 # write_csv(tides, "tides.csv")
 
-site <- "BRAD"
+depls_dated <- depls %>%
+  mutate(ymdstr = sapply(Deployment, function(x){
+    strsplit(x, split = "_")[[1]][1]
+  })) %>%
+  mutate(y = substring(ymdstr, 1, 4),
+         m = substring(ymdstr, 5, 6),
+         d = substring(ymdstr, 7, 8)) %>%
+  mutate(startdate = ymd_hms(paste(paste(y, m, d, sep = "-"), "00:00:00"))) %>%
+  select(Site, Type, Deployment, total_minutes_final, startdate) %>%
+  mutate(enddate = startdate + total_minutes_final*60)
+
+find_tide_distr <- function(start, stop){
+  if (start == stop){
+    tibble(High = 0, Low = 0, Mid = 0)
+  }else{
+    tides %>%
+      filter(DateTime >= start & DateTime < stop) %>%
+      group_by(Tide) %>%
+      summarise(n = n()) %>% 
+      pivot_wider(names_from = Tide, values_from = n)
+  }
+}
+
+depls_tide <- lapply(1:nrow(depls_dated), function(i) {
+  find_tide_distr(depls_dated$startdate[i], depls_dated$enddate[i])
+}) %>% bind_rows()
+
+# this tibble has start, end date of deployments, total amount pics taken, and ratio of hrs of different stages of tide
+depls_dated <- bind_cols(depls_dated, depls_tide)
+
+### on the second thought, I could approach it differently. too lazy to clean it up tho
+
+dets_empty <- tibble()
+
+for (i in 1:nrow(depls_dated)){
+  var_times <- depls_dated$startdate[i] + seq(0, depls_dated$total_minutes_final[i]*60, 60)
+  
+  var_empty_dets <- tibble(
+    Site = depls_dated$Site[i],
+    Deployment = depls_dated$Deployment[i],
+    Type = depls_dated$Type[i],
+    DateTime = var_times,
+    Species = "none"
+  )
+  
+  dets_empty <- bind_rows(dets_empty, var_empty_dets)
+}
+
+tides$Tide <- as_factor(tides$Tide)
+
+dets_empty <- dets_empty %>% 
+  mutate(DateHour = round_date(DateTime, unit = "h")) %>%
+  left_join(tides, c("DateHour" = "DateTime")) %>%
+  select(Site, Deployment, Type, DateTime, Species, level, Tide)
+
+# now we have an index of all pictures ever taken and their tides (plus/minus 30 min)
+
+# do the same as with detections - get solar standardized time (will take loooonger - like 2 days)
+
+pb <- progress_bar$new(
+  format = "[:bar] :percent eta: :eta elapsed: :elapsed :current step",
+  clear = FALSE, total = nrow(dets_empty), width = 100)
+
+dets_empty_suntimes <- sapply(dets_empty$DateTime, function(x){
+  pb$tick()
+  suntime(date = date(format(x, format="%Y-%m%-%d %T")),
+          lat = 36.8794, lon = -76.2892,
+          utc_offset = timedate2offset(format(x, format="%Y-%m%-%d %T")))
+}) %>% t() %>% as_tibble() # takes time
+colnames(dets_empty_suntimes) <- c("sunrise", "sunset")
+dets_empty_suntimes <- dets_empty_suntimes %>% mutate(
+  sunrise = ymd_hms(sunrise),
+  sunset = ymd_hms(sunset)
+) %>%
+  select(sunrise, sunset)
+
+dets_empty <- bind_cols(dets_empty, dets_empty_suntimes)
+remove(dets_empty_suntimes)
+
+det_empty_degtime <- sapply(1:nrow(dets_empty), function(i){
+  time2deg(time = dets_empty$DateTime[i],
+           sunrise = dets_empty$sunrise[i],
+           sunset = dets_empty$sunset[i]) %% (2*pi) # %% to ensure that deg is between 0 and 2pi
+})
+
+dets_empty <- dets_empty %>%
+  mutate(degtime = det_empty_degtime)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Rarefaction per location/tide/time bin ------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-dets %>%
-  filter(Site == site)
-
-depls %>%
-  filter(Site == site)
 
