@@ -1,48 +1,115 @@
-# CoastalDiversity
+# Detection of diversity of coastal avian and mammalian fauna
 
 *Oleksii Dubovyk, Ella DiPetto, Chi Wei, Alex Wright, Iroshmal Peiris, Maizer Sparkman, Eric L. Walters*
 
 Data and analyses for the VAS 2024 annual meeting presentation (and subsequent pubs, hopefully) on observed avian and mammalian diversity of shorelines in coastal Virginia. Data privided by Ella DiPetto.
 
 ## Data source
+
+### Wildlife observations
 The data collected during the dissertation research of [Ella DiPetto](https://edipetto.weebly.com/).
+
+#### [detections.csv](detections.csv)
+
+The main dataset containing the data on wildlife observations.
+
+#### [deployments.csv](deployments.csv)
+
+Supplementary dataset on duration of each deployment of trail cameras.
+
+### Functional traits
+
+#### [BirdFuncDat.txt](BirdFuncDat.txt) and [MamFuncDat.txt](MamFuncDat.txt)
+The dataset used was EltonTraits 1.0[^eltontraits].
+
+### Tides
+
+#### [tides.csv](tides.csv)
+
+The data on tides from the [NOAA](https://tidesandcurrents.noaa.gov/waterlevels.html?id=8638610&units=standard&bdate=20220401&edate=20230201&timezone=GMT&datum=MLLW&interval=h&action=data).
+
+## Contents
+
+### [main.R](main.R)
+
+The main script, all analyses are here.
+
+### [suntime.R](suntime.R)
+
+A function to find a local time of sunrise and sunset for a given date and coordinates. Based on the [USGS calculator](https://gml.noaa.gov/grad/solcalc/calcdetails.html).
+
+**Arguments**
+
+  - `date` - chr, date of interest in "yyyy-mm-dd" format
+  - `lat` - num, decimal latitude
+  - `lon` - num, decimal longitude
+  - `utc_offset` - num, time zone offset relative to the UTC: e.g., EDT is `-4`, EST is `-5`, PST is `-8`.
+
+**Usage**
+
+To calculate the sunrise and sunset time for Norfolk on Apr 2nd 2024, we call
+
+```r
+suntime(date = "2024-04-02", lat = 36.8794, lon = -76.2892, utc_offset = -4)
+## [1] "06:48:22" "19:28:38"
+```
 
 ## Prerequisites
 ### R stuff
 - The latest [R version](https://cran.r-project.org/bin/windows/base/)
 - [Posit/RStudio](https://posit.co/download/rstudio-desktop/)
-- Install `tidyverse`:
-```
-install.packages("tidyverse")
+- Install `tidyverse`, `lubridate`, `data.table`, `caret`:
+```r
+packages <- c("tidyverse", "lubridate", "data.table", "caret")
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+invisible(lapply(packages, library, character.only = TRUE))
 ```
 ### Git Bash (if you only want to get the newest code)
 - [Install Git Bash](https://carpentries.github.io/workshop-template/)
 - Open the folder you want our repository to be copied to, e.g.,
-  ```
+  ```bash session
   cd /c/Users/username/CoastalDiversity
   ```
-- Type
+- Let the Git know who you are
+  ```bash session
+  git config --global user.name "Your Name"
+  git config --global user.email "youremail@domain.com"
   ```
+- Type
+  ```bash session
   git clone https://github.com/OleksiiDubovyk/CoastalDiversity
+  ```
+- Whenever you want to get the newest code, type
+  ```bash session
+  git pull
   ```
 ### Setup your GitHub account (if you plan to contribute to coding)
 - Create a GitHub account
-- Install (GitHub CLI)[https://github.com/cli/cli?tab=readme-ov-file#installation]
+- Install [GitHub CLI](https://github.com/cli/cli?tab=readme-ov-file#installation)
     - Open Windows PowerShell and run
-    ```
+    ```console
     winget install --id GitHub.cli
     ```
-    - Go back to Git Bash an run
-    ```
+    - Restart Git Bash, navigate to the working directory, an run
+    ```bash session
     gh auth login
     ```
     - Follow the prompts: GitHub.com -> HTTPS -> Y -> Login with a web browser
 - Open Git Bash, run
+  ```bash session
+  git remote set-url origin https://{TOKEN}@github.com/OleksiiDubovyk/CoastalDiversity.git/
   ```
-  git remote add origin https://{TOKEN}@github.com/OleksiiDubovyk/CoastalDiversity.git/
-  ```
-  [comment]: <Token is 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>
 - Whenever you want to edit the code, type
-  ```
+  ```bash session
   git pull
+  git add filename.extension # specify the file you have just changed
+  git commit -m "Your comments on what you've added"
+  git push
   ```
+
+# References
+
+[^eltontraits]: Wilman, H., J. Belmaker, J. Simpson, C. de la Rosa, M. M. Rivadeneira, and W. Jetz. 2014. EltonTraits 1.0: species-level foraging attributes of the world’s birds and mammals. Ecology 95:2027–2027. https://doi.org/10.1890/13-1917.1
