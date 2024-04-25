@@ -103,6 +103,12 @@ timedate2offset <- function(dttm){
 #           lat = 36.8794, lon = -76.2892,
 #           utc_offset = timedate2offset(x))
 # }) %>% t() %>% as_tibble()
+#
+# dets_suntimes <- sapply(dets$DateTime, function(x){
+#   suntime(date = date(x),
+#           lat = 36.8794, lon = -76.2892,
+#           utc_offset = timedate2offset(x))
+# }) %>% t() %>% as_tibble() # takes time, about 10 minutes
 # colnames(dets_suntimes) <- c("sunrise", "sunset")
 # dets_suntimes <- dets_suntimes %>% mutate(
 #   sunrise = ymd_hms(sunrise),
@@ -124,6 +130,15 @@ timedate2offset <- function(dttm){
 #            sunset = dets$sunset[i]) %% (2*pi) # %% to ensure that deg is between 0 and 2pi
 # })
 # 
+# dets <- bind_cols(dets, dets_suntimes)
+# remove(dets_suntimes)
+# 
+# det_degtime <- sapply(1:nrow(dets), function(i){
+#   time2deg(time = dets$DateTime[i], 
+#            sunrise = dets$sunrise[i], 
+#            sunset = dets$sunset[i]) %% (2*pi) # %% to ensure that deg is between 0 and 2pi
+# })
+# # 
 # dets <- dets %>%
 #   mutate(degtime = det_degtime)
 # 
@@ -326,6 +341,27 @@ depls_dated <- depls %>%
   select(Site, Type, Deployment, total_minutes_final, enddate) %>%
   mutate(startdate = enddate - total_minutes_final*60)
 
+find_tide_distr <- function(start, stop){
+  if (start == stop){
+    tibble(High = 0, Low = 0, Mid = 0)
+  }else{
+    tides %>%
+      filter(DateTime >= start & DateTime < stop) %>%
+      group_by(Tide) %>%
+      summarise(n = n()) %>% 
+      pivot_wider(names_from = Tide, values_from = n)
+  }
+}
+
+depls_tide <- lapply(1:nrow(depls_dated), function(i) {
+  find_tide_distr(depls_dated$startdate[i], depls_dated$enddate[i])
+}) %>% bind_rows()
+
+# this tibble has start, end date of deployments, total amount pics taken, and ratio of hrs of different stages of tide
+depls_dated <- bind_cols(depls_dated, depls_tide)
+
+### on the second thought, I could approach it differently. too lazy to clean it up tho
+
 dets_empty <- tibble()
 
 for (i in 1:nrow(depls_dated)){
@@ -395,6 +431,35 @@ dets_empty <- read_csv("dets_empty.csv")
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # End of Degtimes of nondetection ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+pb <- progress_bar$new(
+  format = "[:bar] :percent eta: :eta elapsed: :elapsed :current step",
+  clear = FALSE, total = nrow(dets_empty), width = 100)
+
+dets_empty_suntimes <- sapply(dets_empty$DateTime, function(x){
+  pb$tick()
+  suntime(date = date(format(x, format="%Y-%m%-%d %T")),
+          lat = 36.8794, lon = -76.2892,
+          utc_offset = timedate2offset(format(x, format="%Y-%m%-%d %T")))
+}) %>% t() %>% as_tibble() # takes time
+colnames(dets_empty_suntimes) <- c("sunrise", "sunset")
+dets_empty_suntimes <- dets_empty_suntimes %>% mutate(
+  sunrise = ymd_hms(sunrise),
+  sunset = ymd_hms(sunset)
+) %>%
+  select(sunrise, sunset)
+
+dets_empty <- bind_cols(dets_empty, dets_empty_suntimes)
+remove(dets_empty_suntimes)
+
+det_empty_degtime <- sapply(1:nrow(dets_empty), function(i){
+  time2deg(time = dets_empty$DateTime[i],
+           sunrise = dets_empty$sunrise[i],
+           sunset = dets_empty$sunset[i]) %% (2*pi) # %% to ensure that deg is between 0 and 2pi
+})
+
+dets_empty <- dets_empty %>%
+  mutate(degtime = det_empty_degtime)
 
 ### ED trying something here, but doesn't account for frequency of all tide levels
 
