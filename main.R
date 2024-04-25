@@ -30,7 +30,7 @@ library(ggplot2)
 
 dets <- read_csv("./detections.csv") %>%
   filter(Species %!in% c("NEED NEW LABEL", "Unknown"))
-depls <- read_csv("./deployments.csv")
+depls <- read_csv("./deployments.csv") %>% filter(total_minutes_final > 0)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Sunrise/sunset calculations ------------------------------------------------------------
@@ -325,12 +325,12 @@ depls_dated <- depls %>%
          d = substring(ymdstr, 7, 8)) %>%
   mutate(enddate = ymd_hms(paste(paste(y, m, d, sep = "-"), "12:00:00"))) %>%
   select(Site, Type, Deployment, total_minutes_final, enddate) %>%
-  mutate(startdate = enddate - total_minutes_final*60)
+  mutate(startdate = enddate - total_minutes_final*60 + 60)
 
 dets_empty <- tibble()
 
 for (i in 1:nrow(depls_dated)){
-  var_times <- depls_dated$startdate[i] + seq(0, depls_dated$total_minutes_final[i]*60, 60)
+  var_times <- depls_dated$startdate[i] + seq(from = 0, to = (-1 + depls_dated$total_minutes_final[i])*60, by = 60)
   
   var_empty_dets <- tibble(
     Site = depls_dated$Site[i],
@@ -497,23 +497,37 @@ tibble(null_tides, mammals_tides) %>% chisq.test()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Master DataSet
-mds <- dets %>%
+
+mdets <- dets %>%
   select(colnames(dets)[colnames(dets) %in% colnames(dets_empty)]) %>%
-  bind_rows(dets_empty) %>%
+  mutate(DateTime = floor_date(DateTime, "minute")) %>%
+  mutate(uniq = paste(Site, Type, DateTime))
+
+mndets <- dets_empty %>%
+  mutate(DateTime = floor_date(DateTime, "minute")) %>%
+  mutate(uniq = paste(Site, Type, DateTime))
+
+mndets <- mndets %>%
+  filter(uniq %!in% mdets$uniq)
+
+mds <- bind_rows(
+  mdets, mndets
+) %>%
+  select(- uniq) %>%
   mutate(timebin = degtime %/% (2*pi/24))
 
-mds %>%
-  ggplot(aes(x = timebin))+
-  geom_histogram(bins = 24)
+remove(mdets, mndets)
 
-permestSR <- function(loc = "BRAD", tide = "Mid", time = 0, data = mds, n = 0.05, nperm = 100){
+# Rarefaction
+
+permestSR <- function(loc, tide, time, data = mds, n = 0.05, nperm = 100){
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Permutational estimate of observed species richness
   #
   # Args:
-  # loc - location code
-  # tide - tide level, either "Low", "Mid", or "High"
-  # time - timebin, any integer from 0 to 24
+  # loc - location code(s), vector if multiple
+  # tide - tide level, either "Low", "Mid", or "High", vector if multiple
+  # time - timebin, any integer from 0 to 24, vector if multiple
   # data - dataset with both detections and non-detections
   # n - level at which to estimate diversity, where 0 = no observations, 1 = all observations
   # nperm - number of permutations
@@ -521,13 +535,26 @@ permestSR <- function(loc = "BRAD", tide = "Mid", time = 0, data = mds, n = 0.05
   # Output:
   # Vector, estimated species richness and 95% CI
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  locs <- unique(data$Site)
+  tides <- unique(data$Tide)
+  times <- unique(data$timebin)
+  
+  if (!missing(loc)){
+    locs <- loc
+  }
+  if (!missing(tide)){
+    tides <- tide
+  }
+  if (!missing(time)){
+    times <- time
+  }
   
   sr <- numeric(nperm)
   
   data <- data %>%
-    filter(Site == loc,
-           Tide == tide,
-           timebin == time)
+    filter(Site %in% locs,
+           Tide %in% tides,
+           timebin %in% times)
   
   n <- round(nrow(data) * n)
   
@@ -545,6 +572,41 @@ permestSR <- function(loc = "BRAD", tide = "Mid", time = 0, data = mds, n = 0.05
     # pb$tick()
   }
   
-  return(c("Est" = mean(sr), "2.5% CI" = unname(quantile(sr, 0.025)), "97.5% CI" = unname(quantile(sr, 0.975))))
+  return(c("n" = n, 
+           "Est" = mean(sr), 
+           "CI_0.025" = unname(quantile(sr, 0.025)), 
+           "CI_0.975" = unname(quantile(sr, 0.975))))
+  # return(sr)
   
 }
+
+permrarSR <- function(nperm = 100, step = 0.05, ...){
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Permutational estimate of observed species richness
+  #
+  # Args:
+  # loc - location code
+  # tide - tide level, either "Low", "Mid", or "High"
+  # time - timebin, any integer from 0 to 24
+  # data - dataset with both detections and non-detections
+  # nperm - number of permutations 
+  # step - step size of sample size, where 0 = no observations, 1 = all observations
+  #
+  # Output:
+  # Tibble with the columns representing n, mean species richness, and 95% CI
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  steps <- seq(0, 1, step)
+  out <- sapply(steps, function(n){
+    permestSR(n = n, nperm = nperm, ...)
+  }) %>% t() %>% as_tibble()
+  return(out)
+}
+
+testrar <- permrarSR(step = 0.01, time = 14)
+
+testrar %>%
+  ggplot(aes(x = n)) +
+  geom_line(aes(y = CI_0.025), color = "gray") +
+  geom_line(aes(y = CI_0.975), color = "gray") +
+  geom_line(aes(y = Est), color = "black") +
+  labs(x = "Sample size", y = "Species richness")
