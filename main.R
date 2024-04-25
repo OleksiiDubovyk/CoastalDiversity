@@ -520,7 +520,7 @@ remove(mdets, mndets)
 
 # Rarefaction
 
-permestSR <- function(loc, tide, time, data = mds, n = 0.05, nperm = 100){
+permestSR <- function(loc, tide, time, data = mds, n = 0.05, nperm = 100, species = T){
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Permutational estimate of observed species richness
   #
@@ -564,11 +564,17 @@ permestSR <- function(loc, tide, time, data = mds, n = 0.05, nperm = 100){
   for (i in 1:nperm){
     index <- sample(1:nrow(data), size = n, replace = F)
     iter_data <- data[index,]
-    sr[i] <- iter_data %>%
-      filter(Species != "none") %>%
-      .$Species %>%
-      unique() %>%
-      length()
+    if (species){
+      sr[i] <- iter_data %>%
+        filter(Species != "none") %>%
+        .$Species %>%
+        unique() %>%
+        length()
+    }else{
+      sr[i] <- iter_data %>%
+        filter(Species != "none") %>%
+        nrow()
+    }
     # pb$tick()
   }
   
@@ -602,7 +608,7 @@ permrarSR <- function(nperm = 100, step = 0.05, ...){
   return(out)
 }
 
-testrar <- permrarSR(step = 0.01, time = 14)
+testrar <- permrarSR(step = 0.01)
 
 testrar %>%
   ggplot(aes(x = n)) +
@@ -610,3 +616,29 @@ testrar %>%
   geom_line(aes(y = CI_0.975), color = "gray") +
   geom_line(aes(y = Est), color = "black") +
   labs(x = "Sample size", y = "Species richness")
+
+# permutational approach seems to be way to slow for the large datasets (1.5 hrs for 2.6 mln rows)
+# there might be a way to develop the analytical approach
+
+# what is the relationship of # individuals sampled vs # photos?
+
+testrarind <- tibble(n = runif(1000, 0, nrow(mds)))
+testrarind$ind <- sapply(testrarind$n, function(x){
+  mds[sample(1:nrow(mds), x, F),] %>%
+    filter(Species != "none") %>%
+    nrow()
+})
+
+testrarind %>%
+  ggplot(aes(x = n, y = ind)) +
+  geom_point()
+
+# almost perfectly linear!
+
+lm(ind ~ n, testrarind) %>% summary()
+
+# the line eqn is ind = 1.189e+00 + 6.978e-03 * n
+
+n2ind <- function(n) ifelse(n > 0, round(1.189e+00 + 6.978e-03 * n), 0)
+ind2n <- function(ind) ifelse(ind > 0, round((ind - 1.189e+00) / 6.978e-03), 0)
+
