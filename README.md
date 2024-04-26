@@ -1,6 +1,6 @@
 # Detection of diversity of coastal avian and mammalian fauna
 
-*Oleksii Dubovyk, Ella DiPetto, Chi Wei, Alex Wright, Iroshmal Peiris, Maizer Sparkman, Eric L. Walters*
+*Oleksii Dubovyk, Ella DiPetto, Chi Wei, Iroshmal Peiris, Eric L. Walters*
 
 Data and analyses for the VAS 2024 annual meeting presentation (and subsequent pubs, hopefully) on observed avian and mammalian diversity of shorelines in coastal Virginia. Data privided by Ella DiPetto.
 
@@ -54,7 +54,7 @@ suntime(date = "2024-04-02", lat = 36.8794, lon = -76.2892, utc_offset = -4)
 ## [1] "06:48:22" "19:28:38"
 ```
 
-### [bigrarefaction.R](bigrarefactio.R)
+### [bigrarefaction.R](bigrarefaction.R)
 
 A group of functions to build rarefaction curves through interpolation or extrapolation procedures. `interpolation()` is built to handle large numbers.
 
