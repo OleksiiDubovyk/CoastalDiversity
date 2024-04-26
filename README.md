@@ -54,6 +54,10 @@ suntime(date = "2024-04-02", lat = 36.8794, lon = -76.2892, utc_offset = -4)
 ## [1] "06:48:22" "19:28:38"
 ```
 
+### [bigrarefaction.R](bigrarefactio.R)
+
+A group of functions to build rarefaction curves through interpolation or extrapolation procedures. `interpolation()` is built to handle large numbers.
+
 ## Prerequisites
 ### R stuff
 - The latest [R version](https://cran.r-project.org/bin/windows/base/)
