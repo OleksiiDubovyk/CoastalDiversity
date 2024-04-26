@@ -15,12 +15,21 @@ rm(list = ls())
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
 # LIBRARIES ---- 
+
+packages <- c("tidyverse", "lubridate", "data.table", "caret", "progress", "gmp")
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+invisible(lapply(packages, library, character.only = TRUE))
+
 library(data.table)
 library(tidyverse)
 library(lubridate)
 library(caret)
 library(progress)
 library(ggplot2)
+library(gmp)
 
 # MAIN ----
 
@@ -642,3 +651,76 @@ lm(ind ~ n, testrarind) %>% summary()
 n2ind <- function(n) ifelse(n > 0, round(1.189e+00 + 6.978e-03 * n), 0)
 ind2n <- function(ind) ifelse(ind > 0, round((ind - 1.189e+00) / 6.978e-03), 0)
 
+# Analytical rarefaction
+
+source("bigrarefaction.R")
+
+ararSR <- function(loc, tide, time, data = mds, maxn = 2, step = 0.01){
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Analytical estimation of interpolated and extrapolated species richness
+  #
+  # Args:
+  # loc - location code or a vector with a list
+  # tide - tide level, either "Low", "Mid", or "High", or vector
+  # time - timebin, any integer from 0 to 24, or a vector
+  # data - dataset with both detections and non-detections
+  # maxn - sampling effort at which to stop extrapolation, where 1 = all observations
+  # step - step size of sample size, where 0 = no observations, 1 = all observations
+  #
+  # Output:
+  # Tibble with the columns representing number of pictures, corresponding number of inds, 
+  # <contd> inter/extra-polated species richness, and whether it is extrapolated
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  locs <- unique(data$Site)
+  tides <- unique(data$Tide)
+  times <- unique(data$timebin)
+  
+  if (!missing(loc)){
+    locs <- loc
+  }
+  if (!missing(tide)){
+    tides <- tide
+  }
+  if (!missing(time)){
+    times <- time
+  }
+  
+  data <- data %>%
+    filter(Site %in% locs,
+           Tide %in% tides,
+           timebin %in% times)
+  
+  community <- data %>%
+    filter(Species != "none") %>%
+    group_by(Species) %>%
+    summarize(n = n()) %>%
+    .$n %>%
+    unlist() %>% unname()
+  
+  community <- community[community > 0]
+  N <- sum(community)
+  S <- length(community)
+  
+  f1 <- length(community[community == 1])
+  
+  f2 <- length(community[community == 1])
+  
+  f0 <- (f1^2) / (2*f2) # Chao estimator
+  
+  out <- tibble(perc = seq(0, maxn, step)) %>%
+    mutate(individuals = round(perc * N)) %>%
+    mutate(samples = ind2n(individuals))
+  
+  out$S <- sapply(out$individuals, function(j){
+    rarefaction(abundances = community, ind = j, N = N, S = S, f0 = f0, f1 = f1)
+  })
+  
+  return(out %>%
+           mutate(extra = (individuals > N)))
+  
+}
+
+test_ar <- ararSR()
+test_ar %>%
+  ggplot(aes(x = samples, y = S, color = extra)) +
+  geom_line(lwd = 2)
