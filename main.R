@@ -702,8 +702,10 @@ ararSR <- function(loc, tide, time, data = mds, maxn = 2, step = 0.01){
   S <- length(community)
   
   f1 <- length(community[community == 1])
+  f1 <- ifelse(f1 == 0, 1, f1)
   
   f2 <- length(community[community == 1])
+  f2 <- ifelse(f2 == 0, 1, f2)
   
   f0 <- (f1^2) / (2*f2) # Chao estimator
   
@@ -721,6 +723,38 @@ ararSR <- function(loc, tide, time, data = mds, maxn = 2, step = 0.01){
 }
 
 test_ar <- ararSR()
+test_ar$location <- "all"
+for (loc in unique(mds$Site)){
+  test_ar <- bind_rows(test_ar,
+    ararSR(loc = loc, maxn = 10) %>%
+      mutate(location = loc)
+  )
+  print(loc)
+}
 test_ar %>%
-  ggplot(aes(x = samples, y = S, color = extra)) +
-  geom_line(lwd = 2)
+  ggplot(aes(x = samples, y = S, linetype = extra, color = location)) +
+  geom_line(lwd = 1.25)
+
+tide_ar <- tibble()
+for (tide in unique(mds$Tide)){
+  tide_ar <- bind_rows(tide_ar,
+                       ararSR(tide = tide) %>%
+                         mutate(tide = tide)
+  )
+  print(tide)
+}
+tide_ar %>%
+  ggplot(aes(x = samples, y = S, linetype = extra, color = tide)) +
+  geom_line(lwd = 1.25)
+
+time_ar <- tibble()
+for (time in unique(mds$timebin)){
+  time_ar <- bind_rows(time_ar,
+                       ararSR(time = time) %>%
+                         mutate(time = time)
+  )
+  print(time)
+}
+time_ar %>%
+  ggplot(aes(x = samples, y = S, color = time, group = time)) +
+  geom_line()
