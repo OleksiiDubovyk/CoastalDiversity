@@ -74,13 +74,21 @@ Desperate attempts to go away from the singleton/doubleton-based Chao[^chao] app
 
 The notation is the following: `N` denotes a vector of values representing abundances of different species within a community. 
 
-`prob_same(N, m)` estimates the expected probability of getting an unobserved before species in a sample drawn from community `N` at `m`th individual with replacement (therefore, inaccurate). If we let $S$ be the observed species richness, $J$ -- overall number of individuals, and $p_i = \frac{N_i}{J}$ -- percentages of species within a community, then the probability of the $m$th individual drawn to represent a new species is
+**`prob_same(N, m)`** estimates the expected probability of getting an unobserved before species in a sample drawn from community `N` at `m`th individual with replacement (therefore, inaccurate). If we let $S$ be the observed species richness, $J$ -- overall number of individuals, and $p_i = \frac{N_i}{J}$ -- percentages of species within a community, then the probability of the $m$th individual drawn to represent a new species is
 
 $P(m) = \sum \limits_{i = 1}^{S} \prod \limits_{k = 1}^m \frac{N_i - p_i (k-1)}{J - (k-1)}$
 
 Again, this estimation is inaccurate.
 
-`probs_roll(N)` estimates the expected probabilities when drawing a sequence of individuals from a community simply applying `prob_same(N, m)` to the sequence of individuals $m = \{1, 2, 3, \dotsb, N-2, N-1, N\}$.
+**`probs_roll(N)`** estimates the expected probabilities when drawing a sequence of individuals from a community simply applying `prob_same(N, m)` to the sequence of individuals $m = \{1, 2, 3, \dotsb, N-2, N-1, N\}$.
+
+**`probs_combin(n, k = 1)`** uses combinatorics to estimate said probabilities. I honestly don't remember how I came up with that four years ago, I might have looked it up in some of the Chao papers, all I remember is that it is somehow related to the hypergeometric distribution. If an `m`th individual is drawn from a community, then the probability of this individual representing a new species not previously observed with $\{1, \dotsb, m-1\}$ individuals is
+
+$\sum \limits_{i = 1}^{S} - \frac{\binom{N - N_i}{m}}{\binom{N}{m}} + \frac{\binom{N - N_i}{m-1}}{\binom{N}{m-1}}$
+
+The `k` parameter specifies a step size with the number of individuals: the formula can be elaborated to estimate the probability of getting a new species when $k$ $m$th indiviuals are drawn.
+
+**`beyond_combin(N, ceil, burnin)`** tries to estimate how would the sequence of `probs_combin(N)` behave once $m$ reaches the $N$ and $\binom{N}{m-1}$ starts throwing out undivisible zeros. It is a very brute approach where I try to predict how the probabilities are decreasing on each step of the sequence of `probs_roll(N)` (ignoring some first `burnin` values and all the way until `ceil`). We can then use `beyond_combin(N, ceil, burnin) %>% sum()` to estinmate the species richness including the unobserved part without relying on singleton-based Chao1 estimator (hint: the absence of singletons still creates problems since the last values of the `probs_combin()` are zeros; zeros are ignored in `beyond_combin()`).
 
 ## Prerequisites
 ### R stuff
