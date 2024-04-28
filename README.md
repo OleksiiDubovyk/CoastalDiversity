@@ -58,9 +58,9 @@ suntime(date = "2024-04-02", lat = 36.8794, lon = -76.2892, utc_offset = -4)
 
 A group of functions to build rarefaction curves through interpolation or extrapolation procedures. `interpolation(..., mode = "l")` is built to handle large numbers.
 
-It is assumed that for a community with $S$ species and $N$ individuals, such that there are $N_i$ individuals of species $i$ and, therefore, $\sum_{i=1}^{S} N_i = N$, when $n$ individuals are drawn, the interpolated species richness ($S(x)$ represents the species richness observed when $x$ individuals are drawn) can be estimated as:
+It is assumed that for a community with $S$ species and $N$ individuals, such that there are $N_i$ individuals of species $i$ and, therefore, $\sum \limits_{i=1}^{S} N_i = N$, when $n$ individuals are drawn, the interpolated species richness ($S(x)$ represents the species richness observed when $x$ individuals are drawn) can be estimated as:
 
-$S(n) = S(N) - {\binom{N}{n}}^{-1} \times \sum_{i=1}^{S(N)} \binom{N-N_i}{n}$
+$S(n) = S(N) - {\binom{N}{n}}^{-1} \times \sum \limits_{i=1}^{S(N)} \binom{N-N_i}{n}$
 
 and extrapolated values are estimated through Chao1 estimator[^chao], $\hat{f_0} = f_1^2 / 2f_2$, where $f_x$ represents the number of species for which $N_i = x$,
 
