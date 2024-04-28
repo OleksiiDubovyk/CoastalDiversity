@@ -649,7 +649,7 @@ lm(ind ~ n, testrarind) %>% summary()
 # the line eqn is ind = 1.189e+00 + 6.978e-03 * n
 
 n2ind <- function(n) ifelse(n > 0, round(1.189e+00 + 6.978e-03 * n), 0)
-ind2n <- function(ind) ifelse(ind > 0, round((ind - 1.189e+00) / 6.978e-03), 0)
+ind2n <- function(ind) ifelse(ind > 0, round((ind - 1.189e+00 + 1.195) / 6.978e-03), 0)
 
 # Analytical rarefaction
 
@@ -756,5 +756,9 @@ for (time in unique(mds$timebin)){
   print(time)
 }
 time_ar %>%
-  ggplot(aes(x = samples, y = S, color = time, group = time)) +
+  ggplot(aes(x = samples, y = S, color = time, group = interaction(time, extra))) +
+  geom_line()
+
+ararSR(loc = "BRAD", tide = "Mid", time = 14) %>%
+  ggplot(aes(x = samples, y = S, color = extra)) +
   geom_line()
