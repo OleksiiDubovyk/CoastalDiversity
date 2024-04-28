@@ -72,11 +72,15 @@ $S(N+m) = S(N) + \hat{f_0}\left[ 1 - \left( 1 - \frac{f_1}{N \hat{f_0} + f_1} \r
 
 Desperate attempts to go away from the singleton/doubleton-based Chao[^chao] approximations of extrapolated rarefaction curves. Use at your own risk: the approach has not been peer reviewed and mostly relies on thoughts and prayers.
 
-Let there 
+The notation is the following: `N` denotes a vector of values representing abundances of different species within a community. 
 
-`prob_same(N, m)` estimates the expected probability of getting an unobserved before species in a sample drawn from community `N` at `m`th individual with replacement (therefore, inaccurate).
+`prob_same(N, m)` estimates the expected probability of getting an unobserved before species in a sample drawn from community `N` at `m`th individual with replacement (therefore, inaccurate). If we let $S$ be the observed species richness, $J$ -- overall number of individuals, and $p_i = \frac{N_i}{J}$ -- percentages of species within a community, then the probability of the $m$th individual drawn to represent a new species is
 
-`probs_roll(N)` estimates the expected probabilities when drawing a sequence of individuals from a community.
+$P(m) = \sum \limits_{i = 1}^{S} \prod \limits_{k = 1}^m \frac{N_i - p_i (k-1)}{J - (k-1)}$
+
+Again, this estimation is inaccurate.
+
+`probs_roll(N)` estimates the expected probabilities when drawing a sequence of individuals from a community simply applying `prob_same(N, m)` to the sequence of individuals $m = \{1, 2, 3, \dotsb, N-2, N-1, N\}$.
 
 ## Prerequisites
 ### R stuff
