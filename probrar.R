@@ -27,10 +27,10 @@ probs_combin <- function(n, k = 1){
   test1 <- function(n, m){
     N <- sum(n)
     S <- length(n)
-    sapply(1:S, function(i) -((choose(N-n[i], m))/(choose(N, m)))+((choose(N-n[i], m-1))/(choose(N, m-1))))
+    sapply(1:S, function(i) -((gmp::chooseZ(N-n[i], m))/(gmp::chooseZ(N, m)))+((gmp::chooseZ(N-n[i], m-1))/(gmp::chooseZ(N, m-1))))
   }
   if(k == 1){
-    sapply(1:sum(n), function(x) sum(test1(n, x)))
+    sapply(1:sum(n), function(x) test1(n, x) %>% gmp::c_bigq() %>% gmp::sum.bigq() %>% as.numeric())
   }else{
     l <-  floor(sum(n)/k)
     idx <-  as.data.frame(sapply(1:l, function(x) seq(x*k-(k-1), x*k, 1)))
