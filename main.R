@@ -1,5 +1,5 @@
 # PREAMBLE ----
-
+1
 # adds timemark to RStudio console statements
 h <- taskCallbackManager()
 h$add(function(expr, value, ok, visible) {
@@ -199,7 +199,7 @@ traits_all <- bind_rows(
          d_seed = `Diet-Seed`,
          d_plant = `Diet-PlantO`,
          bodymass = `BodyMass-Value`) %>% # rename variables with easier abbrs
-  select(eng, sci, d_inv, d_vend, d_vect, d_vfish, d_vunk, d_scav, d_fru, d_nect, d_seed, d_plant, bodymass) # keep the important vars
+  select(eng, sci, d_inv, d_vend, d_vect, d_vfish, d_vunk, d_scav, d_fru, d_nect, d_seed, d_plant, bodymass, class) # keep the important vars
 
 remove(traits_birds, traits_mammals)
 
@@ -483,24 +483,6 @@ ggplot(dets, aes(x = Guild, fill = Tide)) +
 
 # OD: Ella's code doesn't account for the baseline tide level
 
-# Chi-squared test for observations vs null tide levels
-
-null_tides <- depls_dated %>%
-  summarise(High = sum(High), Mid = sum(Mid), Low = sum(Low)) %>% unlist()
-
-birds_tides <- dets %>%
-  filter(Guild %in% c("Perching Bird", "Wading Bird", "Marsh Bird", "Raptor", "Seabird", "Shorebird", "Waterfowl")) %>%
-  .$Tide %>% summary()
-
-mammals_tides <- dets %>%
-  filter(Guild %in% c("Mesomammal", "Small Mammal", "Large Mammal")) %>%
-  .$Tide %>% summary()
-
-tibble(null_tides, birds_tides) %>% chisq.test()
-tibble(null_tides, mammals_tides) %>% chisq.test()
-
-
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Rarefaction per location/tide/time bin ------------------------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -617,16 +599,16 @@ permrarSR <- function(nperm = 100, step = 0.05, ...){
   return(out)
 }
 
-testrar <- permrarSR(step = 0.01)
+# testrar <- permrarSR(step = 0.01)
+# 
+# testrar %>%
+#   ggplot(aes(x = n)) +
+#   geom_line(aes(y = CI_0.025), color = "gray") +
+#   geom_line(aes(y = CI_0.975), color = "gray") +
+#   geom_line(aes(y = Est), color = "black") +
+#   labs(x = "Sample size", y = "Species richness")
 
-testrar %>%
-  ggplot(aes(x = n)) +
-  geom_line(aes(y = CI_0.025), color = "gray") +
-  geom_line(aes(y = CI_0.975), color = "gray") +
-  geom_line(aes(y = Est), color = "black") +
-  labs(x = "Sample size", y = "Species richness")
-
-# permutational approach seems to be way to slow for the large datasets (1.5 hrs for 2.6 mln rows)
+# permutational approach seems to be way too slow for the large datasets (1.5 hrs for 2.6 mln rows)
 # there might be a way to develop the analytical approach
 
 # what is the relationship of # individuals sampled vs # photos?
@@ -651,7 +633,9 @@ lm(ind ~ n, testrarind) %>% summary()
 n2ind <- function(n) ifelse(n > 0, round(1.189e+00 + 6.978e-03 * n), 0)
 ind2n <- function(ind) ifelse(ind > 0, round((ind - 1.189e+00 + 1.195) / 6.978e-03), 0)
 
-# Analytical rarefaction
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Analytical rarefaction ----------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 source("bigrarefaction.R")
 
@@ -762,3 +746,93 @@ time_ar %>%
 ararSR(loc = "BRAD", tide = "Mid", time = 14) %>%
   ggplot(aes(x = samples, y = S, color = extra)) +
   geom_line()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Probabilistic rarefaction -------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+source("probrar.R")
+
+prarSR <- function(loc, tide, time, data = mds, maxn = 2, step = 0.01){
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Analytical estimation of interpolated and extrapolated species richness
+  #
+  # Args:
+  # loc - location code or a vector with a list
+  # tide - tide level, either "Low", "Mid", or "High", or vector
+  # time - timebin, any integer from 0 to 24, or a vector
+  # data - dataset with both detections and non-detections
+  # maxn - sampling effort at which to stop extrapolation, where 1 = all observations
+  # step - step size of sample size, where 0 = no observations, 1 = all observations
+  #
+  # Output:
+  # Tibble with the columns representing number of pictures, corresponding number of inds, 
+  # <contd> inter/extra-polated species richness, and whether it is extrapolated
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  locs <- unique(data$Site)
+  tides <- unique(data$Tide)
+  times <- unique(data$timebin)
+  
+  if (!missing(loc)){
+    locs <- loc
+  }
+  if (!missing(tide)){
+    tides <- tide
+  }
+  if (!missing(time)){
+    times <- time
+  }
+  
+  data <- data %>%
+    filter(Site %in% locs,
+           Tide %in% tides,
+           timebin %in% times)
+  
+  community <- data %>%
+    filter(Species != "none") %>%
+    group_by(Species) %>%
+    summarize(n = n()) %>%
+    .$n %>%
+    unlist() %>% unname()
+  
+  community <- community[community > 0]
+  N <- sum(community)
+
+  out <- tibble(perc = seq(0, maxn, step)) %>%
+    mutate(individuals = round(perc * N)) %>%
+    mutate(samples = ind2n(individuals))
+
+  out$S <- sapply(out$individuals, function(j){
+    beyond_combin(N = community, ceil = j) %>% sum()
+  })
+
+  return(out %>%
+           mutate(extra = (individuals > N)))
+  
+}
+
+prarSR(loc = "BRAD", tide = "Mid") %>%
+  ggplot(aes(x = samples, y = S, color = extra)) +
+  geom_line()
+
+## Chi-squared test for the effect of tides ----------------------------------------------
+
+tides_null <- mds %>%
+  filter(Species == "none") %>%
+  group_by(Tide) %>%
+  summarise(n = n())
+
+tides_birds <- mds %>%
+  left_join(select(traits_all, eng, class), by = c("Species" = "eng")) %>%
+  filter(class == "bird") %>%
+  group_by(Tide) %>%
+  summarise(n = n())
+
+tides_mammals <- mds %>%
+  left_join(select(traits_all, eng, class), by = c("Species" = "eng")) %>%
+  filter(class == "mammal") %>%
+  group_by(Tide) %>%
+  summarise(n = n())
+
+tibble(tides_birds$n, tides_null$n) %>% chisq.test()
+tibble(tides_mammals$n, tides_null$n) %>% chisq.test()
