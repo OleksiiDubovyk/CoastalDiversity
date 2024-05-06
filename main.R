@@ -686,12 +686,14 @@ ararSR <- function(loc, tide, time, data = mds, maxn = 2, step = 0.01){
   S <- length(community)
   
   f1 <- length(community[community == 1])
-  f1 <- ifelse(f1 == 0, 1, f1)
   
   f2 <- length(community[community == 1])
-  f2 <- ifelse(f2 == 0, 1, f2)
   
-  f0 <- (f1^2) / (2*f2) # Chao estimator
+  f0 <- 0
+  
+  if (f1 > 0 & f2 > 0){
+    f0 <- (f1^2) / (2*f2) # Chao estimator
+  }
   
   out <- tibble(perc = seq(0, maxn, step)) %>%
     mutate(individuals = round(perc * N)) %>%
@@ -753,7 +755,7 @@ ararSR(loc = "BRAD", tide = "Mid", time = 14) %>%
 
 source("probrar.R")
 
-prarSR <- function(loc, tide, time, data = mds, maxn = 2, step = 0.01){
+prarSR <- function(loc, tide, time, data = mds, maxn, step = 0.01){
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Analytical estimation of interpolated and extrapolated species richness
   #
@@ -797,17 +799,21 @@ prarSR <- function(loc, tide, time, data = mds, maxn = 2, step = 0.01){
   
   community <- community[community > 0]
   N <- sum(community)
+  P <- probs_combin(community)
+  
+  if (missing(maxn)){
+    out <- tibble(S = cumsum(beyond_combin(P, threshold = 1e-6))) %>%
+      rowid_to_column("ind") %>%
+      mutate(samples = ind2n(ind)) %>%
+      mutate(extra = (ind > N))
+  }else{
+    out <- tibble(S = cumsum(beyond_combin(P, ceil = maxn))) %>%
+      rowid_to_column("ind") %>%
+      mutate(samples = ind2n(ind)) %>%
+      mutate(extra = (ind > N))
+  }
 
-  out <- tibble(perc = seq(0, maxn, step)) %>%
-    mutate(individuals = round(perc * N)) %>%
-    mutate(samples = ind2n(individuals))
-
-  out$S <- sapply(out$individuals, function(j){
-    beyond_combin(N = community, ceil = j) %>% sum()
-  })
-
-  return(out %>%
-           mutate(extra = (individuals > N)))
+  return(out)
   
 }
 
@@ -815,7 +821,92 @@ prarSR(loc = "BRAD", tide = "Mid") %>%
   ggplot(aes(x = samples, y = S, color = extra)) +
   geom_line()
 
+# Chao's approach is faster than the probabilistic, though
+ararSR(loc = "BRAD", tide = "Mid") %>% system.time()
+prarSR(loc = "BRAD", tide = "Mid") %>% system.time()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## How many observations to estimate SpRich? ---------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ulocations <- mds$Site %>% unique()
+utides <- mds$Tide %>% unique()
+
+locstides <- expand.grid(ulocations, utides)
+colnames(locstides) <- c("Site", "Tide")
+locstides <- locstides %>% as_tibble()
+
+mds %>%
+  filter(Species != "none") %>%
+  group_by(Site, Tide) %>%
+  summarise(n = n()) %>%
+  .$n %>% max() # 2539
+
+rarcurves <- tibble()
+for (i in 1:nrow(locstides)){
+  rarcurves <- bind_rows(
+    rarcurves,
+    prarSR(loc = locstides$Site[i], tide = locstides$Tide[i], maxn = 2539) %>%
+      mutate(Site = locstides$Site[i], Tide = locstides$Tide[i])
+  )
+  print(c(locstides$Site[i], locstides$Tide[i]))
+}
+
+rarcurves %>%
+  filter(samples <= 2.5e6) %>%
+  ggplot(aes(x = samples, y = S, color = Site, linetype = Tide, group = interaction(Site, Tide))) +
+  geom_line() +
+  scale_x_log10()
+
+rarcurves %>%
+  group_by(ind) %>%
+  summarise(mS = mean(S)) %>%
+  mutate(samples = ind2n(ind)) %>%
+  ggplot(aes(x = samples, y = mS)) +
+  geom_line()
+
+# So the idea is that we still don't know the maximum species richness that could be observed
+# at a particular location and tide level, but we can standardize rarefaction curves by the
+# maximum number of individuals ever observed. On average, sampling of that completeness
+# is expected to yield 13.97 species:
+
+rarcurves %>%
+  group_by(ind) %>%
+  summarise(mS = mean(S)) %>%
+  .$mS %>% max() # 13.97
+
+ggplot() +
+  geom_line(aes(x = samples, y = S, color = extra, linetype = extra, 
+                group = interaction(Site, Tide, extra)), 
+            data = rarcurves) +
+  geom_line(aes(x = samples, y = mS), lwd = 2,
+            data = (rarcurves %>%
+                      group_by(ind) %>%
+                      summarise(mS = mean(S)) %>%
+                      mutate(samples = ind2n(ind)))) +
+  scale_x_log10() +
+  scale_y_log10()
+
+rarcurves %>%
+  filter(extra == F) %>%
+  group_by(Site, Tide) %>%
+  summarise(msamples = max(samples)) %>%
+  .$msamples %>% min() # 2724
+
+# The least sampled interaction between tides and sites yielded 2724 photos, which
+# translates into 20 individuals - our average curve will say that this is only enough to
+# observe ~ 4.63 species:
+
+rarcurves %>%
+  group_by(ind) %>%
+  summarise(mS = mean(S)) %>%
+  filter(ind == 20)
+
+# At this point, I'm just meandering into nowhere
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Chi-squared test for the effect of tides ----------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 tides_null <- mds %>%
   filter(Species == "none") %>%
