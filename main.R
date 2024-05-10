@@ -16,7 +16,7 @@ rm(list = ls())
 
 # LIBRARIES ---- 
 
-packages <- c("tidyverse", "lubridate", "data.table", "caret", "progress", "gmp")
+packages <- c("tidyverse", "lubridate", "data.table", "caret", "progress", "gmp", "mgcv")
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(packages[!installed_packages])
@@ -30,6 +30,7 @@ library(caret)
 library(progress)
 library(ggplot2)
 library(gmp)
+library(mgcv)
 
 # MAIN ----
 
@@ -903,6 +904,89 @@ rarcurves %>%
   filter(ind == 20)
 
 # At this point, I'm just meandering into nowhere
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Rolling estimates ---------------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Get some popcorn, it takes 5 hrs
+
+amds <- mds %>%
+  arrange(Site, Type, DateTime)
+
+site <- ""
+type <- ""
+tide <- ""
+dttm <- ymd_hm("2000-01-01 00:00")
+evnt <- 0
+evnts <- numeric(0)
+
+pb <- progress_bar$new(
+  format = "[:bar] :percent eta: :eta elapsed: :elapsed :current step",
+  clear = FALSE, total = nrow(mds), width = 100)
+
+for (i in 1:nrow(amds)){
+  st <- amds$Site[i]
+  tp <- amds$Type[i]
+  td <- amds$Tide[i]
+  dt <- amds$DateTime[i]
+  if (st == site & td == tide & tp == type & abs(as.numeric(difftime(dt, dttm, units = "m"))) < 30){
+    evnts <- c(evnts, evnt)
+  }else{
+    evnt <- evnt + 1
+    site <- st
+    tide <- td
+    type <- tp
+    dttm <- dt
+    evnts <- c(evnts, evnt)
+  }
+  pb$tick()
+}
+
+amds$window <- evnts
+
+wmds <- amds %>%
+  group_by(window) %>%
+  summarise(site = Site[1], deployment = Deployment[1], type = Type[1], 
+            start = min(DateTime), mid = median(DateTime), end = max(DateTime), 
+            startd = min(degtime), midd = median(degtime), endd = max(degtime),
+            tide = Tide[1],
+            .groups = "drop") %>%
+  mutate(duration = difftime(end, start, units = "m") %>% as.numeric())
+
+sp_est <- numeric(0)
+di <- tibble()
+com <- numeric(0)
+
+pb <- progress_bar$new(
+  format = "[:bar] :percent eta: :eta elapsed: :elapsed :current step",
+  clear = FALSE, total = length(wmds$window), width = 100)
+
+for (w in wmds$window){
+  di <- amds %>%
+    filter(window == w, Species != "none")
+  if (nrow(di) == 0){
+    sp_est <- c(sp_est, 0)
+  }else{
+    com <- di %>%
+      group_by(Species) %>%
+      summarise(n = n()) %>%
+      .$n %>% unlist() %>% unname()
+    S <- com %>% probs_combin() %>% beyond_combin() %>% sum()
+    sp_est <- c(sp_est, S)
+  }
+  pb$tick()
+}
+
+wmds$sprich <- sp_est
+wmds$rsprich <- round(wmds$sprich)
+
+spfit_null <- gam(rsprich ~ site, family = mgcv::ziP(), data = wmds)
+spfit_time <- gam(rsprich ~ site + s(midd), family = mgcv::ziP(), data = wmds)
+spfit_tide <- gam(rsprich ~ site + tide, family = mgcv::ziP(), data = wmds)
+spfit_timetide <- gam(rsprich ~ site + s(midd) + tide, family = mgcv::ziP(), data = wmds)
+
+rankAIC(list(spfit_null, spfit_tide, spfit_time, spfit_timetide))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Chi-squared test for the effect of tides ----------------------------------------------

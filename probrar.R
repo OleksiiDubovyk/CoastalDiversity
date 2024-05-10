@@ -61,7 +61,7 @@ probs_combin <- function(n, k = 1){
   }
 }
 
-beyond_combin <- function(P, ceil, burnin = round(0.5*length(P)), threshold = 1e-30){
+beyond_combin <- function(P, ceil, burnin = round(0.1*length(P)), threshold = 1e-30, top = 1e4){
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Probabilistic extrapolation
@@ -84,57 +84,89 @@ beyond_combin <- function(P, ceil, burnin = round(0.5*length(P)), threshold = 1e
   
   probs_obs <- P
   
-  if (missing(ceil)){
-    
-    if (probs_obs[length(probs_obs)] <= threshold){
-      out <- probs_obs[probs_obs > 0]
-    }else{
-      probs_considered <- probs_obs[burnin:length(probs_obs)]
-      factor1 <- sapply(2:length(probs_considered), function(i) probs_considered[i]/probs_considered[i-1])
-      factor2 <- sapply(2:length(factor1), function(i) factor1[i]/factor1[i-1])
-      factor3 <- sapply(2:length(factor2), function(i) factor2[i]/factor2[i-1])
-      out <- probs_obs
-      out[length(out) + 1] <- out[length(out)] * mean(factor1) * mean(factor2) * mean(factor3)
-      p_i <- probs_obs[length(probs_obs)]
-      while (p_i > threshold){
-        p_i <- out[length(out)] * mean(factor1) * mean(factor2) * mean(factor3)
-        out <- c(out, p_i)
-      }
-    }
-    
+  if (length(P) <= 4 | sum(P) == 1){
+    out <- sum(P)
   }else{
-   
-    if (ceil <= 0){
+    if (missing(ceil)){
       
-      out <- 0
-      
-    }else if (ceil <= length(P)){
-      
-      out <- probs_obs[0:ceil]
+      if (probs_obs[length(probs_obs)] <= threshold){
+        out <- probs_obs[probs_obs > 0]
+      }else{
+        probs_considered <- probs_obs[burnin:length(probs_obs)]
+        factor1 <- 1
+        factor2 <- 1
+        factor3 <- 1
+        factor <- sapply(2:length(probs_considered), function(i) probs_considered[i]/probs_considered[i-1])
+        factor1 <- factor[1]
+        for (i in 2:length(factor)){
+          if (factor[i] > factor[i-1] & factor[i] < 1){
+            factor1 <- c(factor1, factor[i])
+          }
+        }
+        if (length(factor1) > 2){
+          factor2 <- sapply(2:length(factor1), function(i) factor1[i]/factor1[i-1])
+        }
+        if (length(factor2) > 2){
+          factor3 <- sapply(2:length(factor2), function(i) factor2[i]/factor2[i-1])
+        }
+        out <- probs_obs
+        out[length(out) + 1] <- out[length(out)] * mean(factor1) * mean(factor2) * mean(factor3)
+        p_i <- probs_obs[length(probs_obs)]
+        i <- 1
+        while (p_i > threshold & i < top){
+          p_i <- out[length(out)] * mean(factor1) * mean(factor2) * mean(factor3)
+          out <- c(out, p_i)
+          i <- i + 1
+        }
+      }
       
     }else{
       
-      probs_obs <- probs_obs[probs_obs > 0]
-      probs_considered <- probs_obs[burnin:length(probs_obs)]
-      factor1 <- sapply(2:length(probs_considered), function(i) probs_considered[i]/probs_considered[i-1])
-      factor2 <- sapply(2:length(factor1), function(i) factor1[i]/factor1[i-1])
-      factor3 <- sapply(2:length(factor2), function(i) factor2[i]/factor2[i-1])
-      # very brute force to approximate a series
-      out <- probs_obs
-      out[length(out) + 1] <- out[length(out)] * mean(factor1) * mean(factor2) * mean(factor3)
-      for (i in (length(out)+1):ceil){
-        out[i] <- out[i-1] * mean(factor1) * mean(factor2) * mean(factor3)
+      if (ceil <= 0){
+        
+        out <- 0
+        
+      }else if (ceil <= length(P)){
+        
+        out <- probs_obs[0:ceil]
+        
+      }else{
+        
+        probs_obs <- probs_obs[probs_obs > 0]
+        probs_considered <- probs_obs[burnin:length(probs_obs)]
+        factor1 <- 1
+        factor2 <- 1
+        factor3 <- 1
+        factor <- sapply(2:length(probs_considered), function(i) probs_considered[i]/probs_considered[i-1])
+        factor1 <- factor[1]
+        for (i in 2:length(factor)){
+          if (factor[i] > factor[i-1] & factor[i] < 1){
+            factor1 <- c(factor1, factor[i])
+          }
+        }
+        if (length(factor1) > 2){
+          factor2 <- sapply(2:length(factor1), function(i) factor1[i]/factor1[i-1])
+        }
+        if (length(factor2) > 2){
+          factor3 <- sapply(2:length(factor2), function(i) factor2[i]/factor2[i-1])
+        }
+        out <- probs_obs
+        out[length(out) + 1] <- out[length(out)] * mean(factor1) * mean(factor2) * mean(factor3)
+        for (i in (length(out)+1):ceil){
+          out[i] <- out[i-1] * mean(factor1) * mean(factor2) * mean(factor3)
+        }
+        
       }
       
     }
-     
   }
   
   return(out)
   
 }
 
-beyond_combin(probs_combin(c(4, 4))) %>% cumsum() %>% plot(type = "l")
+# killing example
+# beyond_combin(probs_combin(c(12, 1)), burnin = 0, threshold = 1e-10) %>% cumsum() %>% plot(type = "l")
 
 # # Example:
 # test_obs <- probs_combin(c(4, 3, 2, 1))
