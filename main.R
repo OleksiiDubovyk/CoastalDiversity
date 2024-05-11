@@ -986,6 +986,8 @@ spfit_time <- gam(rsprich ~ site + s(midd), family = mgcv::ziP(), data = wmds)
 spfit_tide <- gam(rsprich ~ site + tide, family = mgcv::ziP(), data = wmds)
 spfit_timetide <- gam(rsprich ~ site + s(midd) + tide, family = mgcv::ziP(), data = wmds)
 
+source("aictoolbox.R")
+
 rankAIC(list(spfit_null, spfit_tide, spfit_time, spfit_timetide))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
