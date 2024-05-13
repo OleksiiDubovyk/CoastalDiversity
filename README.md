@@ -11,7 +11,7 @@ The data collected during the dissertation research of [Ella DiPetto](https://ed
 
 #### [detections.csv](detections.csv)
 
-The main dataset containing the data on wildlife observations.
+The main dataset containing the data on wildlife observations - request from Ella (gdipe001@odu.edu).
 
 #### [deployments.csv](deployments.csv)
 
