@@ -90,6 +90,14 @@ The `k` parameter specifies a step size with the number of individuals: the form
 
 **`beyond_combin(N, ceil, burnin)`** tries to estimate how would the sequence of `probs_combin(N)` behave once $m$ reaches the $N$ and $\binom{N}{m-1}$ starts throwing out undivisible zeros. It is a very brute approach where I try to predict how the probabilities are decreasing on each step of the sequence of `probs_roll(N)` (ignoring some first `burnin` values and all the way until `ceil`). We can then use `beyond_combin(N, ceil, burnin) %>% sum()` to estinmate the species richness including the unobserved part without relying on singleton-based Chao1 estimator (hint: the absence of singletons still creates problems since the last values of the `probs_combin()` are zeros; zeros are ignored in `beyond_combin()`).
 
+### [aictoolbox.R](aictoolbox.R)
+
+Useful functions to compare models within the AIC framework.
+
+**`metaAIC(model)`** extracts some AIC information from a model and returns a named vector: `formula` - model formula, `AIC` - AIC value, `logLik` - log-likelihood, `df` - degrees of freedom.
+
+**`rankAIC(list(model1, model2, ...))`** returns a list of input models ranked by $\delta$AIC with the following columns: `model` - model formula, `AIC` - AIC value,  `delta_AIC` - $\delta$AIC, `weight` - AIC weight, `logLik` - log-likelihood, `df` - degrees of freedom.
+
 ## Prerequisites
 ### R stuff
 - The latest [R version](https://cran.r-project.org/bin/windows/base/)
