@@ -746,7 +746,7 @@ time_ar %>%
   ggplot(aes(x = samples, y = S, color = time, group = interaction(time, extra))) +
   geom_line()
 
-ararSR(loc = "BRAD", tide = "Mid", time = 14) %>%
+ararSR(loc = "BRAD", tide = "Mid") %>%
   ggplot(aes(x = samples, y = S, color = extra)) +
   geom_line()
 
@@ -981,14 +981,27 @@ for (w in wmds$window){
 wmds$sprich <- sp_est
 wmds$rsprich <- round(wmds$sprich)
 
+wmds <- wmds %>%
+  mutate(dsin = sin(midd), dcos = cos(midd))
+
 spfit_null <- gam(rsprich ~ site, family = mgcv::ziP(), data = wmds)
-spfit_time <- gam(rsprich ~ site + s(midd), family = mgcv::ziP(), data = wmds)
+spfit_time <- gam(rsprich ~ site + s(dsin) + s(dcos), family = mgcv::ziP(), data = wmds)
 spfit_tide <- gam(rsprich ~ site + tide, family = mgcv::ziP(), data = wmds)
-spfit_timetide <- gam(rsprich ~ site + s(midd) + tide, family = mgcv::ziP(), data = wmds)
+spfit_timetide <- gam(rsprich ~ site + s(dsin) + s(dcos) + tide, family = mgcv::ziP(), data = wmds)
+spfit_timetideref <- gam(rsprich ~ site + s(dsin) + s(dcos) + tide + type, family = mgcv::ziP(), data = wmds)
 
 source("aictoolbox.R")
 
-rankAIC(list(spfit_null, spfit_tide, spfit_time, spfit_timetide))
+rankAIC(list(spfit_null, spfit_tide, spfit_time, spfit_timetide, spfit_timetideref))
+
+# # A tibble: 5 × 6
+# model                                               AIC delta_AIC    weight  logLik    df
+# <chr>                                             <dbl>     <dbl>     <dbl>   <dbl> <dbl>
+#   1 ~ rsprich site + s(dsin) + s(dcos) + tide        44507.      0    7.93e-  1 -22235.  18.4
+# 2 ~ rsprich site + s(dsin) + s(dcos) + tide + type 44509.      2.68 2.07e-  1 -22235.  19.4
+# 3 ~ rsprich site + tide                            44867.    361.   3.79e- 79 -22422.  12.0
+# 4 ~ rsprich site + s(dsin) + s(dcos)               45728.   1221.   5.24e-266 -22847.  16.4
+# 5 ~ rsprich site                                   46135.   1628.   0         -23057.  10.0
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Chi-squared test for the effect of tides ----------------------------------------------
@@ -1013,3 +1026,80 @@ tides_mammals <- mds %>%
 
 tibble(tides_birds$n, tides_null$n) %>% chisq.test()
 tibble(tides_mammals$n, tides_null$n) %>% chisq.test()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# PRESENTATION FIGURES ------------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Rarefaction example -------------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+eg_rar <- tibble(n = 1:300,
+                 S = sapply(1:300, function(i) rarefaction(c(10, 9, 8, 5, 5, 3, 2, 2, 1, 1, 1), ind = i))) %>%
+  mutate(extra = n > sum(c(10, 9, 8, 5, 5, 3, 2, 2, 1, 1, 1)))
+png("eg_rarefaction.png", width = 5, height = 5, units = "in", res = 400, bg = 'transparent')
+eg_rar %>%
+  ggplot() + 
+  geom_line(aes(x = n, y = S), linewidth = 2) +
+  geom_line(aes(x = n, y = S, color = extra), linewidth = 2) +
+  xlab("Individuals sampled") +
+  ylab("Expected species richness") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent",
+                                        colour = NA_character_),
+        panel.grid.major = element_line(color = "gray"),
+        panel.grid.minor = element_line(color = "gray"),
+        plot.background = element_rect(fill = "transparent",
+                                       colour = NA_character_),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent"),
+        legend.key = element_rect(fill = "transparent"))
+dev.off()
+
+eg_prob <- tibble(n = 1:500)
+eg_prob$S <- beyond_combin(probs_combin(c(10, 9, 8, 5, 5, 3, 2, 2, 1, 1, 1)), ceil = 500)
+
+png("eg_probrarefaction.png", width = 5, height = 5, units = "in", res = 400, bg = 'transparent')
+eg_prob %>%
+  ggplot() + 
+  geom_line(aes(x = n, y = S), linewidth = 2) +
+  xlab("Individuals sampled") +
+  ylab("Expected probability of observing +1 species") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent",
+                                        colour = NA_character_),
+        panel.grid.major = element_line(color = "gray"),
+        panel.grid.minor = element_line(color = "gray"),
+        plot.background = element_rect(fill = "transparent",
+                                       colour = NA_character_),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent"),
+        legend.key = element_rect(fill = "transparent")) +
+  scale_x_log10()
+dev.off()
+
+png("chao_vs_prob.png", width = 5, height = 5, units = "in", res = 400, bg = 'transparent')
+eg_prob %>% 
+  mutate(S_chao = sapply(n, function(i) rarefaction(c(10, 9, 8, 5, 5, 3, 2, 2, 1, 1, 1), ind = i)),
+         S_prob = cumsum(S),
+         extra = n > sum(c(10, 9, 8, 5, 5, 3, 2, 2, 1, 1, 1))) %>% 
+  pivot_longer(cols = c("S_chao", "S_prob"), names_to = "Estimator") %>%
+  ggplot() +
+  geom_line(aes(x = n, y = value, group = Estimator, color = Estimator), linewidth = 2) +
+  geom_line(aes(x = n, y = value), data = . %>% filter(extra == F), linewidth = 2) +
+  xlab("Individuals sampled") +
+  ylab("Expected species richness") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent",
+                                        colour = NA_character_),
+        panel.grid.major = element_line(color = "gray"),
+        panel.grid.minor = element_line(color = "gray"),
+        plot.background = element_rect(fill = "transparent",
+                                       colour = NA_character_),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent"),
+        legend.key = element_rect(fill = "transparent"))
+dev.off()

@@ -83,12 +83,85 @@ beyond_combin <- function(P, ceil, burnin = round(0.1*length(P)), threshold = 1e
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
   probs_obs <- P
+  out <- numeric(0)
+  # 
+  # if (sum(P) == 1){
+  #   
+  #   out <- sum(P)
+  #   
+  # }else{
+  #   
+  #   if (missing(ceil)){
+  #     # if no set ceiling, we go all the way until we hit the 0 probability
+  #     
+  #     if (probs_obs[length(probs_obs)] <= threshold){
+  #       # if the last element approaches 0, it means the observed community has reached the saturation point
+  #       
+  #       out <- probs_obs[probs_obs > 0]
+  #       
+  #     }else{
+  #       # if the last probability is non-zero, it means there is some veiled part of the sequence to approach the zero
+  #       
+  #       # get rid of the first elements - they tend to be unstable
+  #       probs_considered <- probs_obs[burnin:length(probs_obs)]
+  #       
+  #       dec <- tibble(x = 1:length(probs_considered),
+  #                     y = probs_considered)
+  #       
+  #       # fit a non-linear minimization decay curve
+  #       fit <- stats::nls(y ~ 1/(b + x^c), data = dec, start = list(b = 1, c = 1), alg = "plinear")
+  #       
+  #       # predict the decay until top
+  #       out <- predict(fit, newdata = tibble(x = 1:top))
+  #       
+  #     }
+  #     
+  #   }else{
+  #     # if ceiling is provided, force to get the full estimation
+  #     
+  #     if (ceil <= 0){
+  #       
+  #       out <- 0
+  #       
+  #     }else if (ceil <= length(P)){
+  #       
+  #       out <- probs_obs[0:ceil]
+  #       
+  #     }else{
+  #       
+  #       # get rid of the last zero probabilities, if any, and burn-in
+  #       probs_obs <- probs_obs[probs_obs > 0]
+  #       probs_obs <- probs_obs[burnin:length(probs_obs)]
+  #       probs_considered <- probs_obs[1]
+  #       
+  #       # ignore probabilities if they are not decreasing
+  #       for (i in 2:length(probs_obs)){
+  #         if (probs_obs[i] < probs_obs[i-1]){
+  #           probs_considered <- c(probs_considered, probs_obs[i])
+  #         }
+  #       }
+  #       
+  #       
+  #       dec <- tibble(x = 1:length(probs_considered),
+  #                     y = probs_considered)
+  #       
+  #       # fit a non-linear minimization decay curve
+  #       fit <- stats::nls(y ~ 1/(b + x^c), data = dec, start = list(b = 1, c = 1), alg = "plinear")
+  #       
+  #       # predict the decay until top
+  #       out <- predict(fit, newdata = tibble(x = 1:ceil))
+  #       
+  #     }
+  #     
+  #   }
+  #   
+  # }
   
   if (length(P) <= 4 | sum(P) == 1){
     out <- sum(P)
   }else{
     if (missing(ceil)){
-      
+
       if (probs_obs[length(probs_obs)] <= threshold){
         out <- probs_obs[probs_obs > 0]
       }else{
@@ -119,19 +192,19 @@ beyond_combin <- function(P, ceil, burnin = round(0.1*length(P)), threshold = 1e
           i <- i + 1
         }
       }
-      
+
     }else{
-      
+
       if (ceil <= 0){
-        
+
         out <- 0
-        
+
       }else if (ceil <= length(P)){
-        
+
         out <- probs_obs[0:ceil]
-        
+
       }else{
-        
+
         probs_obs <- probs_obs[probs_obs > 0]
         probs_considered <- probs_obs[burnin:length(probs_obs)]
         factor1 <- 1
@@ -155,9 +228,9 @@ beyond_combin <- function(P, ceil, burnin = round(0.1*length(P)), threshold = 1e
         for (i in (length(out)+1):ceil){
           out[i] <- out[i-1] * mean(factor1) * mean(factor2) * mean(factor3)
         }
-        
+
       }
-      
+
     }
   }
   
