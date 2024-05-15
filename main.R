@@ -16,7 +16,7 @@ rm(list = ls())
 
 # LIBRARIES ---- 
 
-packages <- c("tidyverse", "lubridate", "data.table", "caret", "progress", "gmp", "mgcv")
+packages <- c("tidyverse", "lubridate", "data.table", "caret", "progress", "gmp", "mgcv", "ggridges")
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(packages[!installed_packages])
@@ -31,6 +31,7 @@ library(progress)
 library(ggplot2)
 library(gmp)
 library(mgcv)
+library(ggridges)
 
 # MAIN ----
 
@@ -885,8 +886,7 @@ ggplot() +
                       group_by(ind) %>%
                       summarise(mS = mean(S)) %>%
                       mutate(samples = ind2n(ind)))) +
-  scale_x_log10() +
-  scale_y_log10()
+  scale_x_log10()
 
 rarcurves %>%
   filter(extra == F) %>%
@@ -992,7 +992,7 @@ spfit_timetideref <- gam(rsprich ~ site + s(dsin) + s(dcos) + tide + type, famil
 
 source("aictoolbox.R")
 
-rankAIC(list(spfit_null, spfit_tide, spfit_time, spfit_timetide, spfit_timetideref))
+rankAIC(list(spfit_null, spfit_tide, spfit_time, spfit_timetide, spfit_timetideref)) %>% write_csv("aictab.csv")
 
 # # A tibble: 5 × 6
 # model                                               AIC delta_AIC    weight  logLik    df
@@ -1102,4 +1102,277 @@ eg_prob %>%
         legend.background = element_rect(fill = "transparent"),
         legend.box.background = element_rect(fill = "transparent"),
         legend.key = element_rect(fill = "transparent"))
+dev.off()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Overall curves ------------------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+png("tides_vs_sites.png", width = 5, height = 5, units = "in", res = 400, bg = 'transparent')
+ggplot() +
+  geom_line(aes(x = samples, y = S, color = extra, linetype = extra, 
+                group = interaction(Site, Tide, extra)), 
+            data = rarcurves) +
+  geom_line(aes(x = samples, y = mS), lwd = 2,
+            data = (rarcurves %>%
+                      group_by(ind) %>%
+                      summarise(mS = mean(S)) %>%
+                      mutate(samples = ind2n(ind)))) +
+  scale_x_log10() +
+  xlab("Photos taken") +
+  ylab("Expected species richness") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent",
+                                        colour = NA_character_),
+        panel.grid.major = element_line(color = "gray"),
+        panel.grid.minor = element_line(color = "gray"),
+        plot.background = element_rect(fill = "transparent",
+                                       colour = NA_character_),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent"),
+        legend.key = element_rect(fill = "transparent"))
+dev.off()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Individuals per sample ----------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+png("tides_vs_sites.png", width = 5, height = 2.5, units = "in", res = 400, bg = 'transparent')
+testrarind %>%
+  ggplot(aes(x = n, y = ind)) +
+  geom_point() +
+  xlab("Photos taken") +
+  ylab("Animals detected") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent",
+                                        colour = NA_character_),
+        panel.grid.major = element_line(color = "gray"),
+        panel.grid.minor = element_line(color = "gray"),
+        plot.background = element_rect(fill = "transparent",
+                                       colour = NA_character_),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent"),
+        legend.key = element_rect(fill = "transparent"))
+dev.off()
+
+rarcurves %>%
+  group_by(Site, Tide) %>%
+  summarize(maxS = max(S)) %>%
+  left_join(rarcurves, by = c("Site", "Tide")) %>%
+  mutate(S95 = maxS * 0.95) %>%
+  mutate(dS = abs(S95 - S)) %>%
+  group_by(Site, Tide) %>%
+  slice(which.min(dS)) %>%
+  .$samples %>%
+  quantile(0.975)
+
+rarcurves %>%
+  group_by(Site, Tide) %>%
+  summarize(maxS = max(S)) %>%
+  left_join(rarcurves, by = c("Site", "Tide")) %>%
+  filter(extra == F) %>%
+  group_by(Site, Tide) %>%
+  slice(which.max(S)) %>%
+  mutate(compl = S/maxS) %>%
+  .$compl %>%
+  quantile(c(0.025, 0.5, 0.975))
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Observations ~ time -------------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#Bird observations as a function of time
+png("birds_time.png", width = 5, height = 5, units = "in", res = 400, bg = 'transparent')
+ggplot(birds, aes(x = degtime)) +
+  geom_histogram(color = "black", bins = 24, boundary = 0) +
+  coord_polar("x", start = pi, direction = 1) +
+  scale_x_continuous(limits = c(0, 2*pi), breaks = seq(0, 1.5*pi, 0.5*pi), 
+                     labels = c("Midnight", "Sunrise", "Noon", "Sunset")) +
+  labs(title = "Birds") +
+  xlab("") +
+  ylab("Count")+
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent",
+                                        colour = NA_character_),
+        panel.grid.major = element_line(color = "gray"),
+        panel.grid.minor = element_line(color = "gray"),
+        plot.background = element_rect(fill = "transparent",
+                                       colour = NA_character_),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        plot.title = element_text(size=30))
+dev.off()
+
+#Mammal observations as a function of time
+png("mammals_time.png", width = 5, height = 5, units = "in", res = 400, bg = 'transparent')
+ggplot(mammals, aes(x = degtime)) +
+  geom_histogram(color = "black", bins = 24, boundary = 0) +
+  coord_polar("x", start = pi, direction = 1) +
+  scale_x_continuous(limits = c(0, 2*pi), breaks = seq(0, 1.5*pi, 0.5*pi), 
+                     labels = c("Midnight", "Sunrise", "Noon", "Sunset")) +
+  labs(title = "Mammals") +
+  xlab("") +
+  ylab("Count")+
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent",
+                                        colour = NA_character_),
+        panel.grid.major = element_line(color = "gray"),
+        panel.grid.minor = element_line(color = "gray"),
+        plot.background = element_rect(fill = "transparent",
+                                       colour = NA_character_),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        plot.title = element_text(size=30))
+dev.off()
+
+png("birds_time_spp.png", width = 5, height = 5, units = "in", res = 400, bg = 'transparent')
+birds %>%
+  filter(Species %in% (
+    birds %>%
+      group_by(Species) %>%
+      summarise(n = n()) %>%
+      filter(n > 5) %>%
+      .$Species
+  )) %>%
+  mutate(Species = fct_reorder(.f = Species, .x = degtime, .fun = mean)) %>%
+  ggplot(aes(x = degtime, y = Species, fill = Species)) +
+  geom_rect(aes(xmin = 0, xmax = pi/2, ymin = 0, ymax = Inf), alpha = 0.5, fill = "gray") +
+  geom_rect(aes(xmin = 1.5*pi, xmax = 2*pi, ymin = 0, ymax = Inf), alpha = 0.5, fill = "gray") +
+  geom_vline(xintercept = seq(0, 2*pi, by = pi/3)) +
+  geom_density_ridges(scale = 4) +
+  scale_y_discrete(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  theme_ridges(grid = F) +
+  guides(fill = "none") +
+  xlab("") +
+  ylab("") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent",
+                                        colour = NA_character_),
+        panel.grid.major = element_line(color = NA),
+        panel.grid.minor = element_line(color = NA),
+        plot.background = element_rect(fill = "transparent",
+                                       colour = NA_character_),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        plot.title = element_text(size = 30))
+dev.off()
+
+png("mammals_time_spp.png", width = 5, height = 5, units = "in", res = 400, bg = 'transparent')
+mammals %>%
+  filter(Species %in% (
+    mammals %>%
+      group_by(Species) %>%
+      summarise(n = n()) %>%
+      filter(n > 5) %>%
+      .$Species
+  )) %>%
+  mutate(Species = fct_reorder(.f = Species, .x = degtime, .fun = mean)) %>%
+  ggplot(aes(x = degtime, y = Species, fill = Species)) +
+  geom_rect(aes(xmin = 0, xmax = pi/2, ymin = 0, ymax = Inf), alpha = 0.5, fill = "gray") +
+  geom_rect(aes(xmin = 1.5*pi, xmax = 2*pi, ymin = 0, ymax = Inf), alpha = 0.5, fill = "gray") +
+  geom_vline(xintercept = seq(0, 2*pi, by = pi/3)) +
+  geom_density_ridges(scale = 4) +
+  scale_y_discrete(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  theme_ridges(grid = F) +
+  guides(fill = "none") +
+  xlab("") +
+  ylab("") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent",
+                                        colour = NA_character_),
+        panel.grid.major = element_line(color = NA),
+        panel.grid.minor = element_line(color = NA),
+        plot.background = element_rect(fill = "transparent",
+                                       colour = NA_character_),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        plot.title = element_text(size = 30))
+dev.off()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Observations ~ tide -------------------------------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+png("birds_tide_spp.png", width = 5, height = 5, units = "in", res = 400, bg = 'transparent')
+mds %>%
+  select(-level) %>%
+  filter(Species != "none") %>%
+  left_join(dets_empty %>% select(DateTime, level) %>% distinct(DateTime, level), "DateTime") %>%
+  filter(Species %in% birds$Species) %>%
+  filter(Species %in% (
+    birds %>%
+      group_by(Species) %>%
+      summarise(n = n()) %>%
+      filter(n > 5) %>%
+      .$Species
+  )) %>%
+  mutate(Species = fct_reorder(.f = Species, .x = level, .fun = mean)) %>%
+  ggplot(aes(x = level, y = Species, fill = Species)) +
+  geom_vline(xintercept = c(1.33, 2.66)) +
+  geom_density_ridges(scale = 4) +
+  coord_cartesian(clip = "off") +
+  theme_ridges(grid = F) +
+  guides(fill = "none") +
+  xlab("Water level, ft") +
+  ylab("") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent",
+                                        colour = NA_character_),
+        panel.grid.major = element_line(color = NA),
+        panel.grid.minor = element_line(color = NA),
+        plot.background = element_rect(fill = "transparent",
+                                       colour = NA_character_),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        plot.title = element_text(size = 30),
+        axis.text.x = element_text(angle = 45, hjust=1),
+        plot.margin = margin(1,1,1,1.5, "cm"))+
+  coord_flip()
+dev.off()
+
+png("mammals_tide_spp.png", width = 5, height = 5, units = "in", res = 400, bg = 'transparent')
+mds %>%
+  select(-level) %>%
+  filter(Species != "none") %>%
+  left_join(dets_empty %>% select(DateTime, level) %>% distinct(DateTime, level), "DateTime") %>%
+  filter(Species %in% mammals$Species) %>%
+  filter(Species %in% (
+    mammals %>%
+      group_by(Species) %>%
+      summarise(n = n()) %>%
+      filter(n > 5) %>%
+      .$Species
+  )) %>%
+  mutate(Species = fct_reorder(.f = Species, .x = level, .fun = mean)) %>%
+  ggplot(aes(x = level, y = Species, fill = Species)) +
+  geom_vline(xintercept = c(1.33, 2.66)) +
+  geom_density_ridges(scale = 4) +
+  coord_cartesian(clip = "off") +
+  theme_ridges(grid = F) +
+  guides(fill = "none") +
+  xlab("Water level, ft") +
+  ylab("") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent",
+                                        colour = NA_character_),
+        panel.grid.major = element_line(color = NA),
+        panel.grid.minor = element_line(color = NA),
+        plot.background = element_rect(fill = "transparent",
+                                       colour = NA_character_),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        plot.title = element_text(size = 30),
+        axis.text.x = element_text(angle = 45, hjust=1),
+        plot.margin = margin(1,1,1,1.5, "cm"))+
+  coord_flip()
 dev.off()
